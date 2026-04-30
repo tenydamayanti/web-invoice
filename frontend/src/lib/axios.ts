@@ -2,7 +2,9 @@ import axios from "axios";
 import { getToken, removeToken } from "@/lib/auth";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  // Fallback ini mencegah client bundle jatuh ke relative URL
+  // ketika env NEXT_PUBLIC_API_URL tidak ikut tersuntik saat build image.
+  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api",
   headers: {
     Accept: "application/json",
   },
