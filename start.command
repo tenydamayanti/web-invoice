@@ -4,7 +4,7 @@ cd "$(dirname "$0")"
 
 set -e
 
-echo "[1/6] Checking Docker..."
+echo "[1/5] Checking Docker..."
 if ! docker version >/dev/null 2>&1; then
   echo "Docker Desktop belum berjalan atau belum terpasang."
   echo "Jalankan Docker Desktop dulu, lalu double-click start.command lagi."
@@ -12,30 +12,10 @@ if ! docker version >/dev/null 2>&1; then
   exit 1
 fi
 
-echo "[2/6] Building and starting containers..."
-docker compose up -d --build
+echo "[2/5] Starting containers..."
+docker compose up -d
 
-echo "[3/6] Waiting for MySQL to become healthy..."
-mysql_status=""
-for _ in $(seq 1 60); do
-  mysql_status="$(docker inspect -f '{{.State.Health.Status}}' invoice-mysql 2>/dev/null || true)"
-  if [ "$mysql_status" = "healthy" ]; then
-    break
-  fi
-  sleep 5
-done
-
-if [ "$mysql_status" != "healthy" ]; then
-  echo "MySQL belum healthy setelah 5 menit."
-  echo "Cek dengan: docker compose logs mysql"
-  read -r
-  exit 1
-fi
-
-echo "[4/6] Running database migration and seeder..."
-docker compose exec -T backend php artisan migrate --seed --force
-
-echo "[5/6] Waiting for frontend to respond..."
+echo "[3/5] Waiting for frontend to respond..."
 frontend_ready="0"
 for _ in $(seq 1 60); do
   if curl -fsS http://localhost:3000/login >/dev/null 2>&1; then
@@ -48,14 +28,17 @@ done
 if [ "$frontend_ready" != "1" ]; then
   echo "Frontend belum siap setelah 5 menit."
   echo "Cek dengan: docker compose logs frontend"
+  echo "Jika ini pertama kali dijalankan, gunakan start-first-run.command"
   read -r
   exit 1
 fi
 
-echo "[6/6] Opening application..."
+echo "[4/5] Opening application..."
 open http://localhost:3000/login
+echo "[5/5] Done."
 echo
-echo "Aplikasi siap dipakai."
+echo "Aplikasi siap dipakai untuk penggunaan harian."
+echo "Untuk setup pertama kali atau setelah update struktur database, jalankan start-first-run.command"
 echo "Login default:"
 echo "  Email    : admin@invoice.com"
 echo "  Password : password123"

@@ -12,11 +12,13 @@ Aplikasi manajemen invoice full-stack untuk deployment lokal dengan teknologi be
 
 ```text
 web-invoice/
-├── backend/
-├── frontend/
-├── docker-compose.yml
-├── start.bat
-└── start.command
+|-- backend/
+|-- frontend/
+|-- docker-compose.yml
+|-- start.bat
+|-- start.command
+|-- start-first-run.bat
+`-- start-first-run.command
 ```
 
 ## Prasyarat
@@ -29,18 +31,25 @@ web-invoice/
 
 ### Windows
 
+Setup pertama kali:
+
+- Double-click [start-first-run.bat](C:/xampp/htdocs/web-invoice/start-first-run.bat)
+
+Pemakaian harian:
+
 - Double-click [start.bat](C:/xampp/htdocs/web-invoice/start.bat)
 
 ### macOS
 
-- Double-click `start.command`
+- Setup pertama kali: double-click `start-first-run.command`
+- Pemakaian harian: double-click `start.command`
 - Jika macOS meminta izin, buka file tersebut melalui Terminal atau izinkan eksekusi terlebih dahulu dengan:
 
 ```bash
-chmod +x start.command
+chmod +x start.command start-first-run.command
 ```
 
-Script start akan otomatis:
+Script `start-first-run` akan otomatis:
 
 1. Mengecek Docker Desktop
 2. Menjalankan `docker compose up -d --build`
@@ -49,6 +58,13 @@ Script start akan otomatis:
 5. Menunggu frontend siap
 6. Membuka `http://localhost:3000/login`
 
+Script `start` untuk penggunaan harian akan:
+
+1. Mengecek Docker Desktop
+2. Menjalankan `docker compose up -d`
+3. Menunggu frontend siap
+4. Membuka `http://localhost:3000/login`
+
 ## Login Default
 
 - Email: `admin@invoice.com`
@@ -56,11 +72,17 @@ Script start akan otomatis:
 
 ## Menjalankan Manual
 
-Kalau ingin menjalankan tanpa script start:
+Setup pertama kali:
 
 ```bash
 docker compose up -d --build
 docker compose exec -T backend php artisan migrate --seed --force
+```
+
+Pemakaian harian:
+
+```bash
+docker compose up -d
 ```
 
 Lalu buka:
@@ -97,7 +119,8 @@ docker compose down
 - Backend API berjalan di `http://localhost:8000`
 - Frontend mengakses API melalui `NEXT_PUBLIC_API_URL=http://localhost:8000/api`
 - Semua service Docker menggunakan `restart: unless-stopped`, jadi container akan otomatis aktif kembali saat Docker Desktop menyala lagi
-- Jika source code diubah dan ingin image ter-update, jalankan ulang script start atau perintah berikut:
+- Data MySQL disimpan di volume Docker `mysql-data`, jadi tidak hilang hanya karena aplikasi di-start ulang
+- Jika source code diubah dan ingin image ter-update, jalankan ulang setup pertama atau perintah berikut:
 
 ```bash
 docker compose up -d --build
