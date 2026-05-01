@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/users/{id}', [UserController::class, 'destroy']);
 
     Route::get('/invoices/next-number', [InvoiceController::class, 'nextNumber']);
+    Route::get('/invoices/export/excel', [InvoiceController::class, 'exportExcel']);
     Route::get('/invoices', [InvoiceController::class, 'index']);
     Route::delete('/invoices/clear', [InvoiceController::class, 'clear']);
     Route::post('/invoices', [InvoiceController::class, 'store']);

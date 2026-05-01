@@ -13,8 +13,9 @@ class DashboardController extends Controller
     {
         Invoice::syncOverdueStatuses();
 
-        $startOfMonth = Carbon::now()->startOfMonth();
-        $endOfMonth = Carbon::now()->endOfMonth();
+        $businessNow = Carbon::now(config('app.timezone'));
+        $startOfMonth = $businessNow->copy()->startOfMonth();
+        $endOfMonth = $businessNow->copy()->endOfMonth();
 
         $recentInvoices = Invoice::query()
             ->with(['vendor', 'senderCompany'])
@@ -41,7 +42,7 @@ class DashboardController extends Controller
                 ->sum('total'),
             'due_this_month' => Invoice::query()
                 ->whereBetween('due_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
-                ->whereIn('status', [Invoice::STATUS_SENT, Invoice::STATUS_OVERDUE])
+                ->whereNotIn('status', [Invoice::STATUS_DRAFT, Invoice::STATUS_CANCELLED])
                 ->count(),
             'recent_invoices' => $recentInvoices,
         ]);

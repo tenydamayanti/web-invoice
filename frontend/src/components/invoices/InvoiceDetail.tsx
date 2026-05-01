@@ -197,10 +197,12 @@ export function InvoiceDetail({
               />
             </div>
 
-            {invoice.notes ? (
+            {invoice.template_data?.contract_number || invoice.notes ? (
               <div className="mt-6 rounded-[24px] border border-border bg-[color:var(--input)] p-5">
-                <p className="text-sm font-semibold text-foreground">Catatan</p>
-                <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">{invoice.notes}</p>
+                <p className="text-sm font-semibold text-foreground">No. Kontrak</p>
+                <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
+                  {invoice.template_data?.contract_number || invoice.notes}
+                </p>
               </div>
             ) : null}
           </Card>

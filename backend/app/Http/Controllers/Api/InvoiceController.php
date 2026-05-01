@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Http\StreamedResponse;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -21,31 +22,7 @@ class InvoiceController extends Controller
     {
         Invoice::syncOverdueStatuses();
 
-        $invoices = Invoice::query()
-            ->with(['vendor', 'senderCompany'])
-            ->when($request->filled('status'), fn (Builder $query) => $query->where('status', $request->string('status')))
-            ->when($request->filled('vendor_id'), fn (Builder $query) => $query->where('vendor_id', $request->integer('vendor_id')))
-            ->when($request->filled('from_date'), fn (Builder $query) => $query->whereDate('issue_date', '>=', $request->string('from_date')))
-            ->when($request->filled('to_date'), fn (Builder $query) => $query->whereDate('issue_date', '<=', $request->string('to_date')))
-            ->when($request->filled('search'), function (Builder $query) use ($request) {
-                $search = trim((string) $request->string('search'));
-
-                $query->where(function (Builder $invoiceQuery) use ($search) {
-                    $invoiceQuery
-                        ->where('invoice_number', 'like', "%{$search}%")
-                        ->orWhereRaw(
-                            "JSON_UNQUOTE(JSON_EXTRACT(template_data, '$.document_number')) like ?",
-                            ["%{$search}%"]
-                        )
-                        ->orWhereHas('vendor', function (Builder $vendorQuery) use ($search) {
-                            $vendorQuery
-                                ->where('name', 'like', "%{$search}%")
-                                ->orWhere('company_name', 'like', "%{$search}%");
-                        });
-                });
-            })
-            ->orderByDesc('issue_date')
-            ->orderByDesc('id')
+        $invoices = $this->buildInvoiceQuery($request)
             ->paginate(15)
             ->withQueryString();
 
@@ -57,12 +34,14 @@ class InvoiceController extends Controller
         $payload = $request->validate([
             'issue_date' => ['nullable', 'date'],
             'exclude_invoice_id' => ['nullable', 'integer'],
+            'sender_company_id' => ['nullable', 'integer'],
         ]);
 
         return response()->json([
             'data' => [
-                'invoice_number' => Invoice::previewNextInvoiceNumber(
+                'invoice_number' => Invoice::previewNextInvoiceNumberForSender(
                     $payload['issue_date'] ?? now()->toDateString(),
+                    $payload['sender_company_id'] ?? null,
                     $payload['exclude_invoice_id'] ?? null,
                 ),
             ],
@@ -77,6 +56,10 @@ class InvoiceController extends Controller
             $calculated = $this->calculateTotals($payload['items'], $payload['template_data'] ?? []);
 
             $invoice = Invoice::query()->create([
+                'invoice_number' => Invoice::previewNextInvoiceNumberForSender(
+                    $payload['issue_date'],
+                    $payload['sender_company_id'],
+                ),
                 'vendor_id' => $payload['vendor_id'],
                 'sender_company_id' => $payload['sender_company_id'],
                 'user_id' => $request->user()->id,
@@ -88,7 +71,7 @@ class InvoiceController extends Controller
                 'tax_amount' => $calculated['tax_amount'],
                 'deduction_amount' => $calculated['deduction_amount'],
                 'total' => $calculated['total'],
-                'notes' => $payload['notes'] ?? null,
+                'notes' => filled($payload['notes'] ?? null) ? trim((string) $payload['notes']) : null,
             ]);
 
             $invoice->items()->createMany($calculated['items']);
@@ -138,8 +121,15 @@ class InvoiceController extends Controller
                 : Carbon::parse($invoice->issue_date);
             $invoiceNumber = $invoice->invoice_number;
 
-            if ($newIssueDate->format('Y-m') !== $currentIssueDate->format('Y-m')) {
-                $invoiceNumber = Invoice::previewNextInvoiceNumber($newIssueDate, $invoice->id);
+            if (
+                $newIssueDate->format('Y-m') !== $currentIssueDate->format('Y-m')
+                || (int) $invoice->sender_company_id !== (int) $payload['sender_company_id']
+            ) {
+                $invoiceNumber = Invoice::previewNextInvoiceNumberForSender(
+                    $newIssueDate,
+                    $payload['sender_company_id'],
+                    $invoice->id,
+                );
             }
 
             $invoice->update([
@@ -154,7 +144,7 @@ class InvoiceController extends Controller
                 'tax_amount' => $calculated['tax_amount'],
                 'deduction_amount' => $calculated['deduction_amount'],
                 'total' => $calculated['total'],
-                'notes' => $payload['notes'] ?? null,
+                'notes' => filled($payload['notes'] ?? null) ? trim((string) $payload['notes']) : null,
             ]);
 
             $invoice->items()->delete();
@@ -251,6 +241,60 @@ class InvoiceController extends Controller
         return $pdf->download($filename.'.pdf');
     }
 
+    public function exportExcel(Request $request): StreamedResponse
+    {
+        Invoice::syncOverdueStatuses();
+        $invoices = $this->buildInvoiceQuery($request)->get();
+        $filename = 'invoice-detail-'.now(config('app.timezone'))->format('Ymd-His').'.xls';
+
+        return response()->streamDownload(function () use ($invoices): void {
+            echo '<html><head><meta charset="UTF-8"></head><body>';
+            echo '<table border="1">';
+            echo '<tr>';
+
+            foreach ([
+                'No Invoice',
+                'Pengirim',
+                'Penerima',
+                'Tanggal Invoice',
+                'Subtotal',
+                'PPN',
+                'PP 55 (0,5%)',
+                'Total',
+                'Pembayaran',
+                'Summary PDF',
+            ] as $header) {
+                echo '<th>'.e($header).'</th>';
+            }
+
+            echo '</tr>';
+
+            foreach ($invoices as $invoice) {
+                $templateData = $this->resolveTemplateData($invoice->template_data ?? [], $invoice);
+                $documentNumber = $templateData['document_number'] ?: $invoice->invoice_number;
+                $pdfSummary = preg_replace('/[\\\\\\/:*?"<>|]/', '-', $documentNumber).'.pdf';
+
+                echo '<tr>';
+                echo '<td>'.e($documentNumber).'</td>';
+                echo '<td>'.e($invoice->senderCompany?->company_name ?? $templateData['issuer_company_name'] ?? '-').'</td>';
+                echo '<td>'.e($invoice->vendor?->company_name ?? $templateData['recipient_company_name'] ?? '-').'</td>';
+                echo '<td>'.e($this->normalizeDate($invoice->issue_date)).'</td>';
+                echo '<td>'.e(number_format((float) round($invoice->subtotal), 0, ',', '.')).'</td>';
+                echo '<td>'.e(number_format((float) round($invoice->tax_amount), 0, ',', '.')).'</td>';
+                echo '<td>'.e(number_format((float) round($invoice->deduction_amount), 0, ',', '.')).'</td>';
+                echo '<td>'.e(number_format((float) round($invoice->total), 0, ',', '.')).'</td>';
+                echo '<td>'.e($this->mapPaymentStatusLabel($invoice->status)).'</td>';
+                echo '<td>'.e($pdfSummary).'</td>';
+                echo '</tr>';
+            }
+
+            echo '</table>';
+            echo '</body></html>';
+        }, $filename, [
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+        ]);
+    }
+
     private function validateInvoice(Request $request): array
     {
         return $request->validate([
@@ -281,6 +325,7 @@ class InvoiceController extends Controller
             'template_data.payment_account_holder' => ['nullable', 'string'],
             'template_data.signature_city' => ['nullable', 'string'],
             'template_data.signature_date' => ['nullable', 'date'],
+            'template_data.tax_percent' => ['nullable', 'numeric', 'min:0'],
             'template_data.deduction_label' => ['nullable', 'string'],
             'template_data.deduction_percent' => ['nullable', 'numeric', 'min:0'],
             'items' => ['required', 'array', 'min:1'],
@@ -336,6 +381,7 @@ class InvoiceController extends Controller
             'signature_city' => $invoice->senderCompany?->signature_city ?? config('invoice_template.signature_city'),
             'signature_role' => $invoice->senderCompany?->signature_role ?? config('invoice_template.signature_role'),
             'signature_name' => $invoice->senderCompany?->signature_name ?? config('invoice_template.signature_name'),
+            'tax_percent' => $invoice->senderCompany?->tax_percent ?? config('invoice_template.tax_percent'),
             'deduction_label' => $invoice->senderCompany?->deduction_label ?? config('invoice_template.deduction_label'),
             'deduction_percent' => $invoice->senderCompany?->deduction_percent ?? config('invoice_template.deduction_percent'),
             'recipient_company_name' => $invoice->vendor?->company_name ?? '',
@@ -352,6 +398,8 @@ class InvoiceController extends Controller
         ]);
 
         $templateData = array_merge($defaults, $incoming);
+        $templateData['contract_number'] = trim((string) ($incoming['contract_number'] ?? $invoice->notes ?? ''));
+        $templateData['tax_percent'] = round((float) ($templateData['tax_percent'] ?? $defaults['tax_percent']), 2);
         $templateData['deduction_percent'] = round((float) ($templateData['deduction_percent'] ?? $defaults['deduction_percent']), 2);
         $templateData['document_number'] = $defaults['document_number'];
         $templateData['signature_date'] = $this->normalizeDate($templateData['signature_date'] ?? $defaults['signature_date']);
@@ -387,6 +435,47 @@ class InvoiceController extends Controller
         $mimeType = Storage::disk('public')->mimeType($path) ?: 'image/png';
 
         return 'data:'.$mimeType.';base64,'.base64_encode($content);
+    }
+
+    private function buildInvoiceQuery(Request $request): Builder
+    {
+        return Invoice::query()
+            ->with(['vendor', 'senderCompany'])
+            ->when($request->filled('status'), fn (Builder $query) => $query->where('status', $request->string('status')))
+            ->when($request->filled('vendor_id'), fn (Builder $query) => $query->where('vendor_id', $request->integer('vendor_id')))
+            ->when($request->filled('from_date'), fn (Builder $query) => $query->whereDate('issue_date', '>=', $request->string('from_date')))
+            ->when($request->filled('to_date'), fn (Builder $query) => $query->whereDate('issue_date', '<=', $request->string('to_date')))
+            ->when($request->filled('search'), function (Builder $query) use ($request) {
+                $search = trim((string) $request->string('search'));
+
+                $query->where(function (Builder $invoiceQuery) use ($search) {
+                    $invoiceQuery
+                        ->where('invoice_number', 'like', "%{$search}%")
+                        ->orWhereRaw(
+                            "JSON_UNQUOTE(JSON_EXTRACT(template_data, '$.document_number')) like ?",
+                            ["%{$search}%"]
+                        )
+                        ->orWhereHas('vendor', function (Builder $vendorQuery) use ($search) {
+                            $vendorQuery
+                                ->where('name', 'like', "%{$search}%")
+                                ->orWhere('company_name', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->orderByDesc('issue_date')
+            ->orderByDesc('id');
+    }
+
+    private function mapPaymentStatusLabel(string $status): string
+    {
+        return match ($status) {
+            Invoice::STATUS_DRAFT => 'Draft',
+            Invoice::STATUS_SENT => 'Terbit',
+            Invoice::STATUS_PAID => 'Lunas',
+            Invoice::STATUS_OVERDUE => 'Jatuh Tempo',
+            Invoice::STATUS_CANCELLED => 'Dibatalkan',
+            default => ucfirst($status),
+        };
     }
 
 }

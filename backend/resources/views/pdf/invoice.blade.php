@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <title>{{ $templateData['document_number'] ?: $invoice->invoice_number }}</title>
     <style>
         @page {
-            margin: 30mm 12mm 22mm;
+            margin: 30mm 12mm 30mm;
         }
 
         * {
@@ -21,7 +21,7 @@
         }
 
         .sheet {
-            height: 244mm;
+            min-height: 244mm;
             position: relative;
         }
 
@@ -82,10 +82,6 @@
             height: 100%;
             position: relative;
             z-index: 2;
-        }
-
-        .main-flow {
-            padding-bottom: 92mm;
         }
 
         .title {
@@ -241,7 +237,7 @@
             border: 0;
             font-size: 9.6px;
             font-weight: 400;
-            padding: 8px 10px;
+            padding: 5px 12px;
             vertical-align: middle;
         }
 
@@ -249,7 +245,7 @@
             font-variant-numeric: tabular-nums;
             text-align: left;
             white-space: nowrap;
-            width: 58px;
+            width: 60px;
         }
 
         .value-right {
@@ -310,14 +306,16 @@
         }
 
         .summary-box-inner .currency,
-        .summary-total-box .currency {
+        .summary-total-box .currency,
+        .amount-table .currency {
             padding-left: 14px;
             text-align: left;
             width: 60px;
         }
 
         .summary-box-inner .value-right,
-        .summary-total-box .value-right {
+        .summary-total-box .value-right,
+        .amount-table .value-right {
             padding-right: 14px;
             text-align: right;
         }
@@ -372,11 +370,8 @@
         }
 
         .bottom-panel {
-            bottom: 27mm;
-            left: 0;
-            position: absolute;
-            right: 0;
-            z-index: 2;
+            margin-top: 34px;
+            page-break-inside: avoid;
         }
 
         .footer-table {
@@ -441,7 +436,7 @@
         .signature-date {
             font-size: 10.8px;
             font-weight: 700;
-            margin: 0 0 86px;
+            margin: 0 0 112px;
         }
 
         .signature-name {
@@ -511,7 +506,7 @@
                 <table class="top-table">
                     <tr>
                         <td class="left-col">
-                            <p class="section-title">Informasi Perusahaan</p>
+                            <p class="section-title">Company Information</p>
                             <div class="company-block">
                                 <div class="party-content">
                                     <p class="company-name">{{ $templateData['issuer_company_name'] }}</p>
@@ -521,7 +516,7 @@
                             </div>
                         </td>
                         <td class="right-col">
-                            <p class="section-title">Tagihan Kepada</p>
+                            <p class="section-title">Bill To</p>
                             <div class="company-block">
                                 <div class="party-content">
                                     <p class="company-name">{{ $templateData['recipient_company_name'] }}</p>
@@ -538,12 +533,12 @@
                                         <td class="meta-value meta-value-document">{{ $documentNumber }}</td>
                                     </tr>
                                     <tr>
-                                        <td class="meta-label">Tanggal</td>
+                                        <td class="meta-label">Invoice Date</td>
                                         <td class="meta-colon">:</td>
                                         <td class="meta-value">{{ $issueDate }}</td>
                                     </tr>
                                     <tr>
-                                        <td class="meta-label">No. Kontrak</td>
+                                        <td class="meta-label">Contract No.</td>
                                         <td class="meta-colon">:</td>
                                         <td class="meta-value">{{ $templateData['contract_number'] ?: '-' }}</td>
                                     </tr>
@@ -596,7 +591,7 @@
                                 </td>
                             </tr>
                             <tr class="summary-row-middle">
-                                <td class="summary-label">PPN&nbsp;</td>
+                                <td class="summary-label">PPN {{ rtrim(rtrim(number_format((float) $invoice->tax_percent, 2, '.', ''), '0'), '.') }}%&nbsp;</td>
                                 <td class="summary-box">
                                     <table class="summary-box-inner">
                                         <tr>
@@ -644,20 +639,20 @@
                     <tr>
                         <td class="payment-column">
                             <div class="payment-box">
-                                <p class="payment-title">Pembayaran :</p>
+                                <p class="payment-title">Payment :</p>
                                 <table class="payment-table">
                                     <tr>
-                                        <td class="payment-label">Nama Bank</td>
+                                        <td class="payment-label">Bank Name</td>
                                         <td class="payment-colon">:</td>
                                         <td>{{ $templateData['payment_bank_name'] }}</td>
                                     </tr>
                                     <tr>
-                                        <td class="payment-label">No. Rekening</td>
+                                        <td class="payment-label">Bank Account Number</td>
                                         <td class="payment-colon">:</td>
                                         <td>{{ $templateData['payment_account_number'] }}</td>
                                     </tr>
                                     <tr>
-                                        <td class="payment-label">Nama Pemilik Rekening</td>
+                                        <td class="payment-label">Account Holder</td>
                                         <td class="payment-colon">:</td>
                                         <td>{{ $templateData['payment_account_holder'] }}</td>
                                     </tr>

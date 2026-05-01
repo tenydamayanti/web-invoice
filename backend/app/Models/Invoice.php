@@ -68,7 +68,10 @@ class Invoice extends Model
                 return;
             }
 
-            $invoice->invoice_number = static::previewNextInvoiceNumber($invoice->issue_date);
+            $invoice->invoice_number = static::previewNextInvoiceNumberForSender(
+                $invoice->issue_date,
+                $invoice->sender_company_id,
+            );
         });
     }
 
@@ -79,15 +82,24 @@ class Invoice extends Model
 
     public static function previewNextInvoiceNumber(Carbon|string|null $issueDate, ?int $excludeInvoiceId = null): string
     {
-        $normalizedIssueDate = static::normalizeIssueDate($issueDate);
-        $sequence = static::monthlySequenceQuery($normalizedIssueDate, $excludeInvoiceId)->count() + 1;
+        return static::previewNextInvoiceNumberForSender($issueDate, null, $excludeInvoiceId);
+    }
 
-        return static::formatDocumentNumber($normalizedIssueDate, $sequence);
+    public static function previewNextInvoiceNumberForSender(
+        Carbon|string|null $issueDate,
+        ?int $senderCompanyId = null,
+        ?int $excludeInvoiceId = null,
+    ): string {
+        $normalizedIssueDate = static::normalizeIssueDate($issueDate);
+        $sequence = static::monthlySequenceQuery($normalizedIssueDate, $senderCompanyId, $excludeInvoiceId)->count() + 1;
+        $invoicePrefix = static::resolveInvoicePrefix($senderCompanyId);
+
+        return static::formatDocumentNumber($normalizedIssueDate, $sequence, $invoicePrefix);
     }
 
     public static function syncOverdueStatuses(?Carbon $referenceDate = null): void
     {
-        $today = ($referenceDate ?? now())->startOfDay()->toDateString();
+        $today = ($referenceDate ?? now(config('app.timezone')))->startOfDay()->toDateString();
 
         static::query()
             ->where('status', self::STATUS_SENT)
@@ -135,12 +147,30 @@ class Invoice extends Model
         return $this->hasMany(InvoiceItem::class);
     }
 
-    private static function monthlySequenceQuery(Carbon $issueDate, ?int $excludeInvoiceId = null): Builder
+    private static function monthlySequenceQuery(
+        Carbon $issueDate,
+        ?int $senderCompanyId = null,
+        ?int $excludeInvoiceId = null,
+    ): Builder
     {
         return static::withTrashed()
             ->whereYear('issue_date', $issueDate->year)
             ->whereMonth('issue_date', $issueDate->month)
+            ->when($senderCompanyId, fn (Builder $query) => $query->where('sender_company_id', $senderCompanyId))
             ->when($excludeInvoiceId, fn (Builder $query) => $query->where('id', '!=', $excludeInvoiceId));
+    }
+
+    private static function resolveInvoicePrefix(?int $senderCompanyId = null): string
+    {
+        if ($senderCompanyId) {
+            $prefix = SenderCompany::query()->whereKey($senderCompanyId)->value('invoice_prefix');
+
+            if (filled($prefix)) {
+                return (string) $prefix;
+            }
+        }
+
+        return (string) config('invoice_template.invoice_prefix', 'DIGITAL-INV');
     }
 
     private static function normalizeIssueDate(Carbon|string|null $issueDate): Carbon
@@ -152,11 +182,12 @@ class Invoice extends Model
         return Carbon::parse($issueDate ?? now());
     }
 
-    private static function formatDocumentNumber(Carbon $issueDate, int $sequence): string
+    private static function formatDocumentNumber(Carbon $issueDate, int $sequence, string $invoicePrefix): string
     {
         return sprintf(
-            '%02d/DIGITAL-INV/%s/%s',
+            '%02d/%s/%s/%s',
             $sequence,
+            trim($invoicePrefix) !== '' ? trim($invoicePrefix) : config('invoice_template.invoice_prefix', 'DIGITAL-INV'),
             static::toRomanMonth((int) $issueDate->format('n')),
             $issueDate->format('Y'),
         );

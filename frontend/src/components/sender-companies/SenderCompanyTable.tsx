@@ -48,6 +48,16 @@ export function SenderCompanyTable({
                     <dd className="break-words text-left [overflow-wrap:anywhere]">{senderCompany.signature_name}</dd>
                   </div>
                   <div className="flex flex-col gap-1.5">
+                    <dt className="text-[color:var(--muted)]">Prefix Invoice</dt>
+                    <dd className="break-words text-left [overflow-wrap:anywhere]">{senderCompany.invoice_prefix}</dd>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <dt className="text-[color:var(--muted)]">PPN</dt>
+                    <dd className="break-words text-left [overflow-wrap:anywhere]">
+                      {senderCompany.tax_percent}%
+                    </dd>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
                     <dt className="text-[color:var(--muted)]">Potongan</dt>
                     <dd className="break-words text-left [overflow-wrap:anywhere]">
                       {senderCompany.deduction_label} ({senderCompany.deduction_percent}%)
@@ -77,6 +87,8 @@ export function SenderCompanyTable({
                 <TableHeaderCell>Bank</TableHeaderCell>
                 <TableHeaderCell>Rekening</TableHeaderCell>
                 <TableHeaderCell>Penandatangan</TableHeaderCell>
+                <TableHeaderCell>Prefix Invoice</TableHeaderCell>
+                <TableHeaderCell>PPN</TableHeaderCell>
                 <TableHeaderCell>Potongan</TableHeaderCell>
                 <TableHeaderCell className="text-right">Aksi</TableHeaderCell>
               </tr>
@@ -85,7 +97,7 @@ export function SenderCompanyTable({
               {loading
                 ? Array.from({ length: 5 }).map((_, index) => (
                     <TableRow key={index}>
-                      <TableCell colSpan={6}>
+                      <TableCell colSpan={8}>
                         <Skeleton className="h-12 w-full" />
                       </TableCell>
                     </TableRow>
@@ -98,6 +110,8 @@ export function SenderCompanyTable({
                       <TableCell>{senderCompany.bank_name}</TableCell>
                       <TableCell>{senderCompany.bank_account_number}</TableCell>
                       <TableCell>{senderCompany.signature_name}</TableCell>
+                      <TableCell>{senderCompany.invoice_prefix}</TableCell>
+                      <TableCell>{senderCompany.tax_percent}%</TableCell>
                       <TableCell>
                         {senderCompany.deduction_label} ({senderCompany.deduction_percent}%)
                       </TableCell>

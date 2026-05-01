@@ -43,8 +43,10 @@ export function Header({
   const pageMeta = getPageMeta(pathname);
   const { theme, toggleTheme } = useTheme();
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [dismissedNotifications, setDismissedNotifications] = useState<string[]>([]);
   const dismissedNotificationsStorageKey = `${DISMISSED_NOTIFICATIONS_KEY}:${user.id}`;
+  const [dismissedNotifications, setDismissedNotifications] = useState<string[]>(() =>
+    readDismissedNotifications(dismissedNotificationsStorageKey),
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -82,26 +84,15 @@ export function Header({
   const ThemeIcon = theme === "dark" ? SunMedium : MoonStar;
 
   useEffect(() => {
-    try {
-      const storedValue = window.localStorage.getItem(dismissedNotificationsStorageKey);
-
-      if (!storedValue) {
-        setDismissedNotifications([]);
-        return;
-      }
-
-      const parsedValue = JSON.parse(storedValue);
-
-      if (Array.isArray(parsedValue)) {
-        setDismissedNotifications(
-          parsedValue.filter((value): value is string => typeof value === "string"),
-        );
-      }
-    } catch {
-      window.localStorage.removeItem(dismissedNotificationsStorageKey);
-      setDismissedNotifications([]);
-    }
+    setDismissedNotifications(readDismissedNotifications(dismissedNotificationsStorageKey));
   }, [dismissedNotificationsStorageKey]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      dismissedNotificationsStorageKey,
+      JSON.stringify(dismissedNotifications),
+    );
+  }, [dismissedNotifications, dismissedNotificationsStorageKey]);
 
   useEffect(() => {
     setDismissedNotifications((currentValue) => {
@@ -111,13 +102,6 @@ export function Header({
 
       const activeKeys = new Set(notifications.map((notification) => notification.key));
       const nextValue = currentValue.filter((value) => activeKeys.has(value));
-
-      if (nextValue.length !== currentValue.length) {
-        window.localStorage.setItem(
-          dismissedNotificationsStorageKey,
-          JSON.stringify(nextValue),
-        );
-      }
 
       return nextValue;
     });
@@ -129,10 +113,7 @@ export function Header({
         return currentValue;
       }
 
-      const nextValue = [...currentValue, key];
-      window.localStorage.setItem(dismissedNotificationsStorageKey, JSON.stringify(nextValue));
-
-      return nextValue;
+      return [...currentValue, key];
     });
   }
 
@@ -190,6 +171,7 @@ export function Header({
                         className="block rounded-[18px] border border-border bg-[color:var(--input)] p-3 transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-white"
                         href={notification.href}
                         key={notification.key}
+                        onMouseDown={() => handleNotificationClick(notification.key)}
                         onClick={() => handleNotificationClick(notification.key)}
                       >
                         <div className="flex items-center justify-between gap-3">
@@ -247,6 +229,29 @@ export function Header({
       </div>
     </header>
   );
+}
+
+function readDismissedNotifications(storageKey: string) {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const storedValue = window.localStorage.getItem(storageKey);
+
+    if (!storedValue) {
+      return [];
+    }
+
+    const parsedValue = JSON.parse(storedValue);
+
+    return Array.isArray(parsedValue)
+      ? parsedValue.filter((value): value is string => typeof value === "string")
+      : [];
+  } catch {
+    window.localStorage.removeItem(storageKey);
+    return [];
+  }
 }
 
 function getPageMeta(pathname: string) {

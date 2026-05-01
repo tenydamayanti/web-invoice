@@ -28,6 +28,8 @@ export interface SenderCompany {
   signature_city: string;
   signature_role: string;
   signature_name: string;
+  invoice_prefix: string;
+  tax_percent: number;
   deduction_label: string;
   deduction_percent: number;
   is_default: boolean;
@@ -60,6 +62,7 @@ export interface InvoiceTemplateData {
   signature_date: string;
   signature_role: string;
   signature_name: string;
+  tax_percent: number;
   deduction_label: string;
   deduction_percent: number;
 }

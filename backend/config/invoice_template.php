@@ -12,6 +12,7 @@ return [
     'signature_city' => 'Jakarta',
     'signature_role' => 'Director',
     'signature_name' => 'Robi Danis Setiawan',
+    'invoice_prefix' => 'DIGITAL-INV',
     'deduction_label' => 'PP 55 (0,5%)',
     'deduction_percent' => 0.5,
     'tax_percent' => 0,

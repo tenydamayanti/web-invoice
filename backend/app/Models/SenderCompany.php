@@ -20,6 +20,8 @@ class SenderCompany extends Model
         'signature_city',
         'signature_role',
         'signature_name',
+        'invoice_prefix',
+        'tax_percent',
         'deduction_label',
         'deduction_percent',
         'is_default',
@@ -30,6 +32,7 @@ class SenderCompany extends Model
     protected function casts(): array
     {
         return [
+            'tax_percent' => 'float',
             'deduction_percent' => 'float',
             'is_default' => 'boolean',
         ];

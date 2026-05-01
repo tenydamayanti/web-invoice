@@ -20,6 +20,7 @@ export const DEFAULT_TEMPLATE_VALUES: Omit<
   signature_city: "Jakarta",
   signature_role: "Director",
   signature_name: "Robi Danis Setiawan",
+  tax_percent: 0,
   deduction_label: "PP 55 (0,5%)",
   deduction_percent: 0.5,
 };
@@ -70,18 +71,19 @@ export function mapSenderCompanyToTemplate(
     signature_city: senderCompany.signature_city || currentTemplate.signature_city,
     signature_role: senderCompany.signature_role || currentTemplate.signature_role,
     signature_name: senderCompany.signature_name || currentTemplate.signature_name,
+    tax_percent: senderCompany.tax_percent ?? currentTemplate.tax_percent,
     deduction_label: senderCompany.deduction_label || currentTemplate.deduction_label,
     deduction_percent:
       senderCompany.deduction_percent ?? currentTemplate.deduction_percent,
   };
 }
 
-export function generateDocumentNumber(date: string) {
+export function generateDocumentNumber(date: string, invoicePrefix = "DIGITAL-INV") {
   const parsedDate = new Date(date || Date.now());
   const year = parsedDate.getFullYear();
   const month = parsedDate.getMonth() + 1;
 
-  return `01/DIGITAL-INV/${toRomanMonth(month)}/${year}`;
+  return `01/${invoicePrefix}/${toRomanMonth(month)}/${year}`;
 }
 
 export function getInvoiceDisplayNumber(

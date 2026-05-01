@@ -21,6 +21,8 @@ const senderCompanySchema = z.object({
   signature_city: z.string().min(1, "Kota tanda tangan wajib diisi"),
   signature_role: z.string().min(1, "Jabatan wajib diisi"),
   signature_name: z.string().min(1, "Nama penandatangan wajib diisi"),
+  invoice_prefix: z.string().min(1, "Prefix invoice wajib diisi"),
+  tax_percent: z.coerce.number().min(0, "PPN tidak boleh negatif"),
   deduction_label: z.string().min(1, "Label potongan wajib diisi"),
   deduction_percent: z.coerce.number().min(0, "Potongan tidak boleh negatif"),
 });
@@ -55,6 +57,8 @@ export function SenderCompanyFormModal({
       signature_city: "",
       signature_role: "",
       signature_name: "",
+      invoice_prefix: "",
+      tax_percent: 0,
       deduction_label: "",
       deduction_percent: 0,
     },
@@ -76,6 +80,8 @@ export function SenderCompanyFormModal({
         signature_city: initialData.signature_city,
         signature_role: initialData.signature_role,
         signature_name: initialData.signature_name,
+        invoice_prefix: initialData.invoice_prefix,
+        tax_percent: initialData.tax_percent,
         deduction_label: initialData.deduction_label,
         deduction_percent: initialData.deduction_percent,
       });
@@ -91,6 +97,8 @@ export function SenderCompanyFormModal({
       signature_city: "",
       signature_role: "",
       signature_name: "",
+      invoice_prefix: "",
+      tax_percent: 0,
       deduction_label: "",
       deduction_percent: 0,
     });
@@ -180,6 +188,14 @@ export function SenderCompanyFormModal({
 
             <Field label="Nama Penandatangan" error={errors.signature_name?.message}>
               <Input {...register("signature_name")} />
+            </Field>
+
+            <Field label="Prefix Invoice" error={errors.invoice_prefix?.message}>
+              <Input placeholder="DIGITAL-INV" {...register("invoice_prefix")} />
+            </Field>
+
+            <Field label="PPN (%)" error={errors.tax_percent?.message}>
+              <Input step="0.01" type="number" {...register("tax_percent")} />
             </Field>
 
             <Field label="Potongan (%)" error={errors.deduction_percent?.message}>

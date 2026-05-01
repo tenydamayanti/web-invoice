@@ -89,6 +89,8 @@ class SenderCompanyController extends Controller
             'signature_city' => ['required', 'string', 'max:100'],
             'signature_role' => ['required', 'string', 'max:100'],
             'signature_name' => ['required', 'string', 'max:255'],
+            'invoice_prefix' => ['required', 'string', 'max:100'],
+            'tax_percent' => ['required', 'numeric', 'min:0'],
             'deduction_label' => ['required', 'string', 'max:255'],
             'deduction_percent' => ['required', 'numeric', 'min:0'],
             'header_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],

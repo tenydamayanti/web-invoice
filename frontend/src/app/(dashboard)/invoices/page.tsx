@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eraser, Search, WalletCards } from "lucide-react";
+import { Eraser, FileSpreadsheet, Search, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/axios";
 import { InvoiceTable } from "@/components/invoices/InvoiceTable";
@@ -113,12 +113,41 @@ export default function InvoicesPage() {
     }
   }
 
+  async function handleExportExcel() {
+    try {
+      const response = await api.get("/invoices/export/excel", {
+        params: {
+          status: status === "all" ? undefined : status,
+          search: search || undefined,
+          from_date: fromDate || undefined,
+          to_date: toDate || undefined,
+        },
+        responseType: "blob",
+      });
+
+      const blobUrl = window.URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `invoice-detail-${new Date().toISOString().slice(0, 10)}.xls`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      toast.error("Gagal export detail invoice ke Excel.");
+    }
+  }
+
   return (
     <div className="space-y-6">
       <Card className="fade-up">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <CardTitle>Daftar Invoice</CardTitle>
           <div className="grid w-full gap-3 sm:flex sm:w-auto sm:flex-wrap">
+            <Button className="w-full sm:w-auto" onClick={handleExportExcel} variant="outline">
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Export Excel
+            </Button>
             <Button className="w-full sm:w-auto" onClick={handleClearInvoices} variant="danger">
               <Eraser className="mr-2 h-4 w-4" />
               Clear Invoice

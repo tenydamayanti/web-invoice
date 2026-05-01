@@ -21,7 +21,6 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/utils";
 import type { Invoice, InvoiceTemplateData, SenderCompany, Vendor } from "@/types";
 
@@ -46,6 +45,7 @@ const templateSchema = z.object({
   signature_date: z.string().min(1, "Tanggal tanda tangan wajib diisi"),
   signature_role: z.string().min(1),
   signature_name: z.string().min(1),
+  tax_percent: z.coerce.number().min(0),
   deduction_label: z.string().min(1),
   deduction_percent: z.coerce.number().min(0),
 });
@@ -93,7 +93,9 @@ export function InvoiceForm({
   const [senderLoading, setSenderLoading] = useState(false);
   const [senderResults, setSenderResults] = useState<SenderCompany[]>([]);
   const [documentNumber, setDocumentNumber] = useState(
-    initialData ? getInvoiceDisplayNumber(initialData) : generateDocumentNumber(initialIssueDate),
+    initialData
+      ? getInvoiceDisplayNumber(initialData)
+      : generateDocumentNumber(initialIssueDate, selectedSenderCompany?.invoice_prefix || "DIGITAL-INV"),
   );
   const previousIssueDate = useRef(initialIssueDate);
 
@@ -104,7 +106,7 @@ export function InvoiceForm({
       vendor_id: initialData?.vendor_id ?? 0,
       issue_date: initialIssueDate,
       due_date: initialData?.due_date ?? formatDateInput(7),
-      notes: initialData?.notes ?? "",
+      notes: initialData?.template_data?.contract_number ?? initialData?.notes ?? "",
       template_data: initialTemplate,
       items:
         initialData?.items?.map((item) => ({
@@ -130,7 +132,7 @@ export function InvoiceForm({
       vendor_id: initialData.vendor_id,
       issue_date: initialData.issue_date,
       due_date: initialData.due_date,
-      notes: initialData.notes ?? "",
+      notes: initialData.template_data?.contract_number ?? initialData.notes ?? "",
       template_data: hydrateInvoiceTemplate(initialData),
       items: initialData.items.map((item) => ({
         description: item.description,
@@ -238,6 +240,9 @@ export function InvoiceForm({
           form.setValue("template_data.signature_name", mappedTemplate.signature_name, {
             shouldDirty: true,
           });
+          form.setValue("template_data.tax_percent", mappedTemplate.tax_percent, {
+            shouldDirty: true,
+          });
           form.setValue("template_data.deduction_label", mappedTemplate.deduction_label, {
             shouldDirty: true,
           });
@@ -260,6 +265,9 @@ export function InvoiceForm({
   const watchedItems = form.watch("items");
   const issueDate = form.watch("issue_date");
   const signatureDate = form.watch("template_data.signature_date");
+  const senderCompanyId = form.watch("sender_company_id");
+  const contractNumber = form.watch("notes");
+  const taxPercent = form.watch("template_data.tax_percent");
   const deductionLabel = form.watch("template_data.deduction_label");
   const deductionPercent = form.watch("template_data.deduction_percent");
 
@@ -278,6 +286,12 @@ export function InvoiceForm({
   }, [form, issueDate, signatureDate]);
 
   useEffect(() => {
+    form.setValue("template_data.contract_number", contractNumber?.trim() ?? "", {
+      shouldDirty: true,
+    });
+  }, [contractNumber, form]);
+
+  useEffect(() => {
     let mounted = true;
 
     async function syncDocumentNumber() {
@@ -288,7 +302,12 @@ export function InvoiceForm({
       const currentMonthKey = issueDate.slice(0, 7);
       const initialMonthKey = initialData?.issue_date.slice(0, 7);
 
-      if (mode === "edit" && initialData && currentMonthKey === initialMonthKey) {
+      if (
+        mode === "edit"
+        && initialData
+        && currentMonthKey === initialMonthKey
+        && Number(senderCompanyId) === Number(initialData.sender_company_id)
+      ) {
         const currentNumber = getInvoiceDisplayNumber(initialData);
         setDocumentNumber(currentNumber);
         form.setValue("template_data.document_number", currentNumber, {
@@ -301,6 +320,7 @@ export function InvoiceForm({
         const response = await api.get<{ data: { invoice_number: string } }>("/invoices/next-number", {
           params: {
             issue_date: issueDate,
+            sender_company_id: senderCompanyId || undefined,
             exclude_invoice_id: mode === "edit" ? initialData?.id : undefined,
           },
         });
@@ -313,7 +333,10 @@ export function InvoiceForm({
           });
         }
       } catch {
-        const fallbackNumber = generateDocumentNumber(issueDate);
+        const fallbackNumber = generateDocumentNumber(
+          issueDate,
+          selectedSenderCompany?.invoice_prefix || "DIGITAL-INV",
+        );
 
         if (mounted) {
           setDocumentNumber(fallbackNumber);
@@ -329,12 +352,12 @@ export function InvoiceForm({
     return () => {
       mounted = false;
     };
-  }, [form, initialData, issueDate, mode]);
+  }, [form, initialData, issueDate, mode, selectedSenderCompany?.invoice_prefix, senderCompanyId]);
 
   const subtotal = watchedItems.reduce((sum, item) => {
     return sum + (Number(item.quantity) || 0) * (Number(item.unit_price) || 0);
   }, 0);
-  const taxAmount = 0;
+  const taxAmount = subtotal * ((Number(taxPercent) || 0) / 100);
   const deductionAmount = subtotal * ((Number(deductionPercent) || 0) / 100);
   const total = subtotal + taxAmount - deductionAmount;
 
@@ -347,6 +370,7 @@ export function InvoiceForm({
         template_data: {
           ...values.template_data,
           document_number: documentNumber,
+          contract_number: values.notes?.trim() ?? "",
           signature_date: values.issue_date,
         },
         status,
@@ -426,6 +450,9 @@ export function InvoiceForm({
     setValue("template_data.signature_name", mappedTemplate.signature_name, {
       shouldDirty: true,
     });
+    setValue("template_data.tax_percent", mappedTemplate.tax_percent, {
+      shouldDirty: true,
+    });
     setValue("template_data.deduction_label", mappedTemplate.deduction_label, {
       shouldDirty: true,
     });
@@ -451,6 +478,7 @@ export function InvoiceForm({
         <input type="hidden" {...register("template_data.signature_date")} />
         <input type="hidden" {...register("template_data.signature_role")} />
         <input type="hidden" {...register("template_data.signature_name")} />
+        <input type="hidden" {...register("template_data.tax_percent", { valueAsNumber: true })} />
         <input type="hidden" {...register("template_data.deduction_label")} />
         <input type="hidden" {...register("template_data.deduction_percent", { valueAsNumber: true })} />
 
@@ -513,8 +541,8 @@ export function InvoiceForm({
             <Input readOnly value={documentNumber} />
           </Field>
 
-          <Field label="Catatan" error={errors.notes?.message}>
-            <Textarea className="min-h-[96px]" {...register("notes")} />
+          <Field label="No. Kontrak" error={errors.notes?.message}>
+            <Input placeholder="Masukkan nomor kontrak" {...register("notes")} />
           </Field>
         </div>
       </Card>
@@ -540,6 +568,14 @@ export function InvoiceForm({
             <PreviewRow
               label="Penandatangan"
               value={selectedSenderCompany?.signature_name || "-"}
+            />
+            <PreviewRow
+              label="Prefix Invoice"
+              value={selectedSenderCompany?.invoice_prefix || "-"}
+            />
+            <PreviewRow
+              label="PPN"
+              value={selectedSenderCompany ? `${selectedSenderCompany.tax_percent}%` : "-"}
             />
           </div>
         </Card>
@@ -631,7 +667,7 @@ export function InvoiceForm({
             <strong className="text-foreground">{formatCurrency(subtotal)}</strong>
           </div>
           <div className="flex items-center justify-between py-2 text-sm">
-            <span className="text-[color:var(--muted)]">PPN 0%</span>
+            <span className="text-[color:var(--muted)]">PPN {Number(taxPercent) || 0}%</span>
             <strong className="text-foreground">{formatCurrency(taxAmount)}</strong>
           </div>
           <div className="flex items-center justify-between py-2 text-sm">
