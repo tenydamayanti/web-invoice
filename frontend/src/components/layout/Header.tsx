@@ -44,6 +44,7 @@ export function Header({
   const { theme, toggleTheme } = useTheme();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [dismissedNotifications, setDismissedNotifications] = useState<string[]>([]);
+  const dismissedNotificationsStorageKey = `${DISMISSED_NOTIFICATIONS_KEY}:${user.id}`;
 
   useEffect(() => {
     let mounted = true;
@@ -82,9 +83,10 @@ export function Header({
 
   useEffect(() => {
     try {
-      const storedValue = window.localStorage.getItem(DISMISSED_NOTIFICATIONS_KEY);
+      const storedValue = window.localStorage.getItem(dismissedNotificationsStorageKey);
 
       if (!storedValue) {
+        setDismissedNotifications([]);
         return;
       }
 
@@ -96,9 +98,10 @@ export function Header({
         );
       }
     } catch {
-      window.localStorage.removeItem(DISMISSED_NOTIFICATIONS_KEY);
+      window.localStorage.removeItem(dismissedNotificationsStorageKey);
+      setDismissedNotifications([]);
     }
-  }, []);
+  }, [dismissedNotificationsStorageKey]);
 
   useEffect(() => {
     setDismissedNotifications((currentValue) => {
@@ -110,12 +113,15 @@ export function Header({
       const nextValue = currentValue.filter((value) => activeKeys.has(value));
 
       if (nextValue.length !== currentValue.length) {
-        window.localStorage.setItem(DISMISSED_NOTIFICATIONS_KEY, JSON.stringify(nextValue));
+        window.localStorage.setItem(
+          dismissedNotificationsStorageKey,
+          JSON.stringify(nextValue),
+        );
       }
 
       return nextValue;
     });
-  }, [notifications]);
+  }, [dismissedNotificationsStorageKey, notifications]);
 
   function handleNotificationClick(key: string) {
     setDismissedNotifications((currentValue) => {
@@ -124,7 +130,7 @@ export function Header({
       }
 
       const nextValue = [...currentValue, key];
-      window.localStorage.setItem(DISMISSED_NOTIFICATIONS_KEY, JSON.stringify(nextValue));
+      window.localStorage.setItem(dismissedNotificationsStorageKey, JSON.stringify(nextValue));
 
       return nextValue;
     });
@@ -329,7 +335,7 @@ function buildNotifications(stats: DashboardStats | null) {
 
   if (stats.counts.overdue > 0) {
     notifications.push({
-      key: `overdue-summary-${stats.counts.overdue}`,
+      key: "overdue-summary",
       title: "Perlu ditindaklanjuti",
       message: `${stats.counts.overdue} invoice sudah melewati jatuh tempo.`,
       href: "/invoices?status=overdue",
@@ -339,7 +345,7 @@ function buildNotifications(stats: DashboardStats | null) {
 
   if (stats.counts.sent > 0) {
     notifications.push({
-      key: `sent-summary-${stats.counts.sent}`,
+      key: "sent-summary",
       title: "Menunggu pembayaran",
       message: `${stats.counts.sent} invoice masih berstatus terbit.`,
       href: "/invoices?status=sent",
@@ -349,7 +355,7 @@ function buildNotifications(stats: DashboardStats | null) {
 
   if (stats.counts.draft > 0) {
     notifications.push({
-      key: `draft-summary-${stats.counts.draft}`,
+      key: "draft-summary",
       title: "Draft siap dicek",
       message: `${stats.counts.draft} draft belum diterbitkan.`,
       href: "/invoices?status=draft",

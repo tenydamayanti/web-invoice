@@ -37,6 +37,7 @@ export function InvoiceDetail({
   statusUpdating: boolean;
 }) {
   const [nextStatus, setNextStatus] = useState<InvoiceStatus | "">("");
+  const manualTransitions = availableTransitions.filter((status) => status !== "overdue");
   const documentNumber = getInvoiceDisplayNumber(invoice);
   const recipientCompany =
     invoice.template_data?.recipient_company_name || invoice.vendor.company_name;
@@ -113,7 +114,7 @@ export function InvoiceDetail({
               ) : null}
             </div>
 
-            {availableTransitions.length > 0 ? (
+            {manualTransitions.length > 0 ? (
               <div className="w-full rounded-[24px] border border-border bg-[color:var(--input)] p-4 xl:w-[340px]">
                 <p className="text-sm font-semibold text-foreground">Ubah Status</p>
                 <div className="mt-3 flex flex-col gap-3 sm:flex-row xl:flex-col">
@@ -122,7 +123,7 @@ export function InvoiceDetail({
                     value={nextStatus}
                   >
                     <option value="">Pilih status berikutnya</option>
-                    {availableTransitions.map((status) => (
+                    {manualTransitions.map((status) => (
                       <option key={status} value={status}>
                         {getStatusLabel(status)}
                       </option>

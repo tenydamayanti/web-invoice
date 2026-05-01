@@ -22,7 +22,7 @@ class Invoice extends Model
 
     public const STATUS_TRANSITIONS = [
         self::STATUS_DRAFT => [self::STATUS_SENT, self::STATUS_CANCELLED],
-        self::STATUS_SENT => [self::STATUS_PAID, self::STATUS_OVERDUE, self::STATUS_CANCELLED],
+        self::STATUS_SENT => [self::STATUS_PAID, self::STATUS_CANCELLED],
         self::STATUS_PAID => [],
         self::STATUS_OVERDUE => [self::STATUS_PAID, self::STATUS_CANCELLED],
         self::STATUS_CANCELLED => [],
