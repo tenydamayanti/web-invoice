@@ -5,7 +5,7 @@
     <title>{{ $templateData['document_number'] ?: $invoice->invoice_number }}</title>
     <style>
         @page {
-            margin: 11mm 12mm 12mm;
+            margin: 30mm 12mm 22mm;
         }
 
         * {
@@ -15,14 +15,55 @@
 
         body {
             color: #101010;
-            font-size: 10.5px;
-            line-height: 1.32;
+            font-size: 9.6px;
+            line-height: 1.22;
             margin: 0;
         }
 
         .sheet {
-            min-height: 271mm;
+            height: 244mm;
             position: relative;
+        }
+
+        .page-header,
+        .page-footer {
+            left: 0;
+            position: fixed;
+            right: 0;
+            z-index: 1;
+        }
+
+        .page-header {
+            top: -21mm;
+            height: 22mm;
+        }
+
+        .page-footer {
+            bottom: -16mm;
+            height: 15mm;
+        }
+
+        .header-frame,
+        .footer-frame {
+            height: 100%;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .header-frame img,
+        .footer-frame img {
+            display: block;
+            height: 100%;
+            width: 100%;
+            object-fit: contain;
+        }
+
+        .header-frame img {
+            object-position: center top;
+        }
+
+        .footer-frame img {
+            object-position: center bottom;
         }
 
         .watermark {
@@ -38,15 +79,20 @@
         }
 
         .content {
+            height: 100%;
             position: relative;
-            z-index: 1;
+            z-index: 2;
+        }
+
+        .main-flow {
+            padding-bottom: 92mm;
         }
 
         .title {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 700;
             letter-spacing: 0.4px;
-            margin: 0 0 18px;
+            margin: 0 0 16px;
             text-align: center;
         }
 
@@ -76,66 +122,69 @@
         }
 
         .left-col {
-            padding-right: 18px;
+            padding-right: 14px;
             width: 50%;
         }
 
         .right-col {
-            padding-left: 18px;
+            padding-left: 14px;
             width: 50%;
         }
 
         .section-title {
-            border-bottom: 3px solid #111111;
-            font-size: 12.5px;
+            border-bottom: 2px solid #111111;
+            font-size: 11.5px;
             font-weight: 700;
             margin: 0;
-            padding-bottom: 6px;
+            padding-bottom: 5px;
         }
 
         .company-block {
             page-break-inside: avoid;
-            padding-top: 12px;
+            padding-top: 10px;
         }
 
         .party-content {
-            min-height: 118px;
+            min-height: 92px;
         }
 
         .party-extra {
-            min-height: 18px;
+            min-height: 14px;
         }
 
         .company-name {
-            font-size: 11.5px;
+            font-size: 10.8px;
             font-weight: 700;
-            margin: 0 0 8px;
+            margin: 0 0 6px;
         }
 
         .company-address {
-            font-size: 10.5px;
-            line-height: 1.42;
+            font-size: 9.8px;
+            line-height: 1.38;
             margin: 0;
-            white-space: pre-line;
+            text-align: justify;
+            text-justify: inter-word;
+            white-space: normal;
+            word-break: normal;
         }
 
         .npwp {
-            margin-top: 10px;
+            margin-top: 8px;
         }
 
         .meta-box {
             background: #d9d9d9;
             margin-left: auto;
-            margin-top: 12px;
-            padding: 11px 15px;
-            width: 86%;
+            margin-top: 10px;
+            padding: 9px 12px;
+            width: 92%;
         }
 
         .meta-table td {
             border: 0;
-            font-size: 10.5px;
+            font-size: 9.8px;
             font-weight: 700;
-            padding: 3px 0;
+            padding: 2px 0;
             vertical-align: top;
         }
 
@@ -153,12 +202,12 @@
         }
 
         .meta-value-document {
-            font-size: 10px;
+            font-size: 9.4px;
             letter-spacing: -0.1px;
         }
 
         .items-table {
-            margin-top: 24px;
+            margin-top: 18px;
             page-break-inside: avoid;
         }
 
@@ -166,16 +215,16 @@
             background: #111111;
             border: 1px solid #111111;
             color: #ffffff;
-            font-size: 10.5px;
+            font-size: 9.8px;
             font-weight: 700;
-            padding: 9px 12px;
+            padding: 6px 10px;
             text-align: center;
         }
 
         .items-table td {
             border: 1px solid #111111;
-            font-size: 11.5px;
-            padding: 12px 14px;
+            font-size: 9.8px;
+            padding: 8px 10px;
             vertical-align: middle;
         }
 
@@ -190,9 +239,9 @@
 
         .amount-table td {
             border: 0;
-            font-size: 11.5px;
-            font-weight: 700;
-            padding: 12px 14px;
+            font-size: 9.6px;
+            font-weight: 400;
+            padding: 8px 10px;
             vertical-align: middle;
         }
 
@@ -200,7 +249,7 @@
             font-variant-numeric: tabular-nums;
             text-align: left;
             white-space: nowrap;
-            width: 52px;
+            width: 58px;
         }
 
         .value-right {
@@ -210,13 +259,13 @@
         }
 
         .summary-wrap {
-            margin-top: 16px;
+            margin-top: 18px;
             page-break-inside: avoid;
         }
 
         .summary-inner {
             margin-left: auto;
-            width: 344px;
+            width: 316px;
         }
 
         .summary-table td {
@@ -225,18 +274,18 @@
         }
 
         .summary-label {
-            font-size: 11.5px;
+            font-size: 9.8px;
             font-weight: 700;
-            padding: 7px 12px 7px 0;
+            padding: 6px 26px 6px 0;
             text-align: right;
             white-space: nowrap;
-            width: 136px;
+            width: 126px;
         }
 
         .summary-box {
             border-left: 1px solid #111111;
             border-right: 1px solid #111111;
-            width: 208px;
+            width: 190px;
         }
 
         .summary-row-first .summary-box {
@@ -254,26 +303,58 @@
 
         .summary-box-inner td {
             border: 0;
-            font-size: 11.5px;
-            font-weight: 700;
-            padding: 7px 10px;
+            font-size: 9.4px;
+            font-weight: 400;
+            padding: 5px 12px;
+            white-space: nowrap;
         }
 
-        .summary-row-total td {
-            padding-top: 10px;
+        .summary-box-inner .currency,
+        .summary-total-box .currency {
+            padding-left: 14px;
+            text-align: left;
+            width: 60px;
+        }
+
+        .summary-box-inner .value-right,
+        .summary-total-box .value-right {
+            padding-right: 14px;
+            text-align: right;
+        }
+
+        .summary-total-wrap {
+            margin-top: 16px;
+            page-break-inside: avoid;
+        }
+
+        .summary-total-inner {
+            margin-left: auto;
+            width: 316px;
+        }
+
+        .summary-total-table {
+            border-collapse: collapse;
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        .summary-total-table td {
+            padding: 0;
+            vertical-align: middle;
         }
 
         .summary-total-label {
-            font-size: 12.5px;
-            font-weight: 800;
-            padding: 0 12px 0 0;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 0 26px 0 0;
             text-align: right;
             white-space: nowrap;
+            width: 126px;
         }
 
         .summary-total-box {
             background: #111111;
-            width: 208px;
+            width: 190px;
         }
 
         .summary-total-box table {
@@ -284,75 +365,96 @@
         .summary-total-box td {
             border: 0;
             color: #ffffff;
-            font-size: 12.5px;
-            font-weight: 800;
-            padding: 9px 10px;
+            font-size: 9.8px;
+            font-weight: 700;
+            padding: 6px 12px;
+            white-space: nowrap;
+        }
+
+        .bottom-panel {
+            bottom: 27mm;
+            left: 0;
+            position: absolute;
+            right: 0;
+            z-index: 2;
         }
 
         .footer-table {
-            margin-top: 48px;
-            page-break-inside: avoid;
+            table-layout: fixed;
+            width: 100%;
+            border-collapse: collapse;
         }
 
         .payment-column {
-            width: 46%;
+            text-align: left;
+            vertical-align: top;
+            width: 58%;
         }
 
         .payment-box {
-            background: #dbe8f5;
-            padding: 12px 16px 14px;
-            width: 90%;
+            display: inline-block;
+            background: #d9e8f8;
+            max-width: 100%;
+            min-width: 380px;
+            padding: 12px 22px 10px 22px;
         }
 
         .payment-title {
-            font-size: 10.5px;
+            font-size: 9.8px;
             font-weight: 700;
-            margin: 0 0 7px;
+            margin: 0 0 8px;
             text-decoration: underline;
         }
 
         .payment-table td {
             border: 0;
-            font-size: 10.5px;
-            padding: 3px 0;
+            font-size: 9.6px;
+            padding: 2px 0;
             vertical-align: top;
         }
 
         .payment-label {
             font-weight: 700;
-            width: 44%;
+            white-space: nowrap;
+            width: 58%;
         }
 
         .payment-colon {
-            width: 12px;
+            width: 16px;
         }
 
         .signature-column {
-            width: 54%;
+            padding-left: 0;
+            text-align: right;
+            vertical-align: top;
+            width: 42%;
         }
 
         .signature-wrap {
-            padding-top: 2px;
+            display: inline-block;
+            min-width: 170px;
+            width: 170px;
+            margin-right: 0;
             text-align: center;
         }
 
         .signature-date {
-            font-size: 11.5px;
+            font-size: 10.8px;
             font-weight: 700;
-            margin: 0 0 66px;
+            margin: 0 0 86px;
         }
 
         .signature-name {
-            font-size: 11.5px;
-            font-weight: 700;
+            font-size: 10px;
+            font-weight: 400;
             margin: 0;
             text-decoration: underline;
         }
 
         .signature-role {
-            font-size: 11.5px;
-            font-weight: 700;
-            margin: 6px 0 0;
+            font-size: 9.6px;
+            font-weight: 400;
+            margin: 5px 0 0;
         }
 
     </style>
@@ -369,7 +471,7 @@
         $signatureLine = trim(($templateData['signature_city'] ?: 'Jakarta').', '.$signatureDate);
         $taxAmount = (float) round($invoice->tax_amount);
         $deductionLabel = $templateData['deduction_label'] ?: 'Potongan';
-        $formatAddress = static function (?string $address, int $maxLineLength = 44): string {
+        $formatAddress = static function (?string $address): string {
             $normalized = trim((string) $address);
 
             if ($normalized === '') {
@@ -377,201 +479,201 @@
             }
 
             $normalized = preg_replace('/\s+/u', ' ', str_replace(["\r\n", "\r", "\n"], ' ', $normalized)) ?? '';
-            $segments = preg_split('/,\s*/u', $normalized) ?: [];
-            $segments = array_values(array_filter(array_map('trim', $segments), static fn (string $segment): bool => $segment !== ''));
+            $normalized = preg_replace('/\s*,\s*/u', ', ', $normalized) ?? $normalized;
 
-            if ($segments === []) {
-                return $normalized;
-            }
-
-            $lines = [];
-            $current = '';
-            $lastIndex = count($segments) - 1;
-
-            foreach ($segments as $index => $segment) {
-                $piece = $segment.($index < $lastIndex ? ',' : '');
-                $candidate = $current === '' ? $piece : $current.' '.$piece;
-
-                if ($current !== '' && mb_strlen($candidate) > $maxLineLength) {
-                    $lines[] = $current;
-                    $current = $piece;
-                    continue;
-                }
-
-                $current = $candidate;
-            }
-
-            if ($current !== '') {
-                $lines[] = $current;
-            }
-
-            return implode("\n", $lines);
+            return $normalized !== '' ? $normalized : '-';
         };
         $issuerAddress = $formatAddress($templateData['issuer_address']);
         $recipientAddress = $formatAddress($templateData['recipient_address']);
     @endphp
 
     <div class="sheet">
-        <div class="content">
-            <h1 class="title">INVOICE</h1>
-
-            <table class="top-table">
-                <tr>
-                    <td class="left-col">
-                        <p class="section-title">Informasi Perusahaan</p>
-                        <div class="company-block">
-                            <div class="party-content">
-                                <p class="company-name">{{ $templateData['issuer_company_name'] }}</p>
-                                <p class="company-address">{{ $issuerAddress }}</p>
-                            </div>
-                            <div class="party-extra">&nbsp;</div>
-                        </div>
-                    </td>
-                    <td class="right-col">
-                        <p class="section-title">Tagihan Kepada</p>
-                        <div class="company-block">
-                            <div class="party-content">
-                                <p class="company-name">{{ $templateData['recipient_company_name'] }}</p>
-                                <p class="company-address">{{ $recipientAddress }}</p>
-                            </div>
-                            <p class="company-address npwp party-extra">NPWP : {{ $templateData['recipient_npwp'] ?: '-' }}</p>
-                        </div>
-
-                        <div class="meta-box">
-                            <table class="meta-table">
-                                <tr>
-                                    <td class="meta-label">No. Invoice</td>
-                                    <td class="meta-colon">:</td>
-                                    <td class="meta-value meta-value-document">{{ $documentNumber }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="meta-label">Tanggal</td>
-                                    <td class="meta-colon">:</td>
-                                    <td class="meta-value">{{ $issueDate }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="meta-label">No. Kontrak</td>
-                                    <td class="meta-colon">:</td>
-                                    <td class="meta-value">{{ $templateData['contract_number'] ?: '-' }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </td>
-                </tr>
-            </table>
-
-            <table class="items-table">
-                <colgroup>
-                    <col style="width: 76%;">
-                    <col style="width: 24%;">
-                </colgroup>
-                <thead>
-                    <tr>
-                        <th>Item Description</th>
-                        <th>Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($invoice->items as $item)
-                        <tr>
-                            <td class="item-description">{{ $item->description }}</td>
-                            <td class="amount-cell">
-                                <table class="amount-table">
-                                    <tr>
-                                        <td class="currency">Rp</td>
-                                        <td class="value-right">{{ number_format((float) round($item->total), 0, ',', '.') }}</td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-
-            <div class="summary-wrap">
-                <div class="summary-inner">
-                    <table class="summary-table">
-                        <tr class="summary-row-first">
-                            <td class="summary-label">Subtotal</td>
-                            <td class="summary-box">
-                                <table class="summary-box-inner">
-                                    <tr>
-                                        <td class="currency">Rp</td>
-                                        <td class="value-right">{{ number_format((float) round($invoice->subtotal), 0, ',', '.') }}</td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                        <tr class="summary-row-middle">
-                            <td class="summary-label">PPN</td>
-                            <td class="summary-box">
-                                <table class="summary-box-inner">
-                                    <tr>
-                                        <td class="currency">Rp</td>
-                                        <td class="value-right">{{ number_format($taxAmount, 0, ',', '.') }}</td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                        <tr class="summary-row-last">
-                            <td class="summary-label">{{ $deductionLabel }}</td>
-                            <td class="summary-box">
-                                <table class="summary-box-inner">
-                                    <tr>
-                                        <td class="currency">-Rp</td>
-                                        <td class="value-right">{{ number_format((float) round($invoice->deduction_amount), 0, ',', '.') }}</td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                        <tr class="summary-row-total">
-                            <td class="summary-total-label">Total</td>
-                            <td class="summary-total-box">
-                                <table>
-                                    <tr>
-                                        <td class="currency">Rp</td>
-                                        <td class="value-right">{{ number_format((float) round($invoice->total), 0, ',', '.') }}</td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                    </table>
-                </div>
+        <div class="page-header">
+            <div class="header-frame">
+                @if(!empty($templateData['header_image_data_uri']))
+                    <img src="{{ $templateData['header_image_data_uri'] }}" alt="Kop surat">
+                @endif
             </div>
+        </div>
 
-            <table class="footer-table">
-                <tr>
-                    <td class="payment-column">
-                        <div class="payment-box">
-                            <p class="payment-title">Pembayaran :</p>
-                            <table class="payment-table">
-                                <tr>
-                                    <td class="payment-label">Nama Bank</td>
-                                    <td class="payment-colon">:</td>
-                                    <td>{{ $templateData['payment_bank_name'] }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="payment-label">No. Rekening</td>
-                                    <td class="payment-colon">:</td>
-                                    <td>{{ $templateData['payment_account_number'] }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="payment-label">Nama Pemilik Rekening</td>
-                                    <td class="payment-colon">:</td>
-                                    <td>{{ $templateData['payment_account_holder'] }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </td>
-                    <td class="signature-column">
-                        <div class="signature-wrap">
-                            <p class="signature-date">{{ $signatureLine }}</p>
-                            <p class="signature-name">({{ $templateData['signature_name'] }})</p>
-                            <p class="signature-role">{{ $templateData['signature_role'] }}</p>
-                        </div>
-                    </td>
-                </tr>
-            </table>
+        <div class="page-footer">
+            <div class="footer-frame">
+                @if(!empty($templateData['footer_image_data_uri']))
+                    <img src="{{ $templateData['footer_image_data_uri'] }}" alt="Footer surat">
+                @endif
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="main-flow">
+                <h1 class="title">INVOICE</h1>
+
+                <table class="top-table">
+                    <tr>
+                        <td class="left-col">
+                            <p class="section-title">Informasi Perusahaan</p>
+                            <div class="company-block">
+                                <div class="party-content">
+                                    <p class="company-name">{{ $templateData['issuer_company_name'] }}</p>
+                                    <p class="company-address">{{ $issuerAddress }}</p>
+                                </div>
+                                <div class="party-extra">&nbsp;</div>
+                            </div>
+                        </td>
+                        <td class="right-col">
+                            <p class="section-title">Tagihan Kepada</p>
+                            <div class="company-block">
+                                <div class="party-content">
+                                    <p class="company-name">{{ $templateData['recipient_company_name'] }}</p>
+                                    <p class="company-address">{{ $recipientAddress }}</p>
+                                </div>
+                                <p class="company-address npwp party-extra">NPWP : {{ $templateData['recipient_npwp'] ?: '-' }}</p>
+                            </div>
+
+                            <div class="meta-box">
+                                <table class="meta-table">
+                                    <tr>
+                                        <td class="meta-label">No. Invoice</td>
+                                        <td class="meta-colon">:</td>
+                                        <td class="meta-value meta-value-document">{{ $documentNumber }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="meta-label">Tanggal</td>
+                                        <td class="meta-colon">:</td>
+                                        <td class="meta-value">{{ $issueDate }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="meta-label">No. Kontrak</td>
+                                        <td class="meta-colon">:</td>
+                                        <td class="meta-value">{{ $templateData['contract_number'] ?: '-' }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+
+                <table class="items-table">
+                    <colgroup>
+                        <col style="width: 76%;">
+                        <col style="width: 24%;">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>Item Description</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($invoice->items as $item)
+                            <tr>
+                                <td class="item-description">{{ $item->description }}</td>
+                                <td class="amount-cell">
+                                    <table class="amount-table">
+                                        <tr>
+                                            <td class="currency">Rp</td>
+                                            <td class="value-right">{{ number_format((float) round($item->total), 0, ',', '.') }}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+
+                <div class="summary-wrap">
+                    <div class="summary-inner">
+                        <table class="summary-table">
+                            <tr class="summary-row-first">
+                                <td class="summary-label"><b>Subtotal</b>&nbsp;</td>
+                                <td class="summary-box">
+                                    <table class="summary-box-inner">
+                                        <tr>
+                                            <td class="currency"><b>Rp</b></td>
+                                            <td class="value-right"><b>{{ number_format((float) round($invoice->subtotal), 0, ',', '.') }}</b></td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr class="summary-row-middle">
+                                <td class="summary-label">PPN&nbsp;</td>
+                                <td class="summary-box">
+                                    <table class="summary-box-inner">
+                                        <tr>
+                                            <td class="currency">Rp</td>
+                                            <td class="value-right">{{ number_format($taxAmount, 0, ',', '.') }}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <tr class="summary-row-last">
+                                <td class="summary-label">{{ $deductionLabel }}&nbsp;</td>
+                                <td class="summary-box">
+                                    <table class="summary-box-inner">
+                                        <tr>
+                                            <td class="currency">-Rp</td>
+                                            <td class="value-right">{{ number_format((float) round($invoice->deduction_amount), 0, ',', '.') }}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="summary-total-wrap">
+                    <div class="summary-total-inner">
+                        <table class="summary-total-table">
+                            <tr>
+                                <td class="summary-total-label">Total&nbsp;</td>
+                                <td class="summary-total-box">
+                                    <table>
+                                        <tr>
+                                            <td class="currency">Rp</td>
+                                            <td class="value-right">{{ number_format((float) round($invoice->total), 0, ',', '.') }}</td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+            <div class="bottom-panel">
+                <table class="footer-table">
+                    <tr>
+                        <td class="payment-column">
+                            <div class="payment-box">
+                                <p class="payment-title">Pembayaran :</p>
+                                <table class="payment-table">
+                                    <tr>
+                                        <td class="payment-label">Nama Bank</td>
+                                        <td class="payment-colon">:</td>
+                                        <td>{{ $templateData['payment_bank_name'] }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="payment-label">No. Rekening</td>
+                                        <td class="payment-colon">:</td>
+                                        <td>{{ $templateData['payment_account_number'] }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="payment-label">Nama Pemilik Rekening</td>
+                                        <td class="payment-colon">:</td>
+                                        <td>{{ $templateData['payment_account_holder'] }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </td>
+                        <td class="signature-column">
+                            <div class="signature-wrap">
+                                <p class="signature-date">{{ $signatureLine }}</p>
+                                <p class="signature-name">({{ $templateData['signature_name'] }})</p>
+                                <p class="signature-role">{{ $templateData['signature_role'] }}</p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
         </div>
     </div>
 </body>

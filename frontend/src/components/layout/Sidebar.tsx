@@ -93,7 +93,7 @@ export function Sidebar({
     <>
       <div
         className={cn(
-          "fixed inset-0 z-40 bg-slate-950/38 backdrop-blur-sm transition lg:hidden",
+          "fixed inset-0 z-40 bg-slate-950/45 transition lg:hidden",
           mobileOpen ? "opacity-100" : "pointer-events-none opacity-0",
         )}
         onClick={onClose}
@@ -101,11 +101,12 @@ export function Sidebar({
 
       <aside
         className={cn(
-          "desktop-sidebar fade-up fixed inset-y-4 left-4 z-50 w-[320px] max-w-[calc(100vw-2rem)] transition-transform duration-300 lg:static lg:inset-auto lg:z-auto lg:flex lg:w-auto lg:max-w-none",
-          mobileOpen ? "translate-x-0" : "-translate-x-[calc(100%+1.5rem)] lg:translate-x-0",
+          "desktop-sidebar fixed left-2 top-[max(0.5rem,env(safe-area-inset-top))] z-50 w-[min(22rem,calc(100vw-1rem))] max-w-[calc(100vw-1rem)] transition-transform duration-300 lg:static lg:inset-auto lg:z-auto lg:flex lg:w-auto lg:max-w-none",
+          "mobile-drawer lg:h-auto",
+          mobileOpen ? "translate-x-0" : "-translate-x-[calc(100%+1rem)] lg:translate-x-0",
         )}
       >
-        <div className="sidebar-surface flex h-full min-h-[calc(100vh-2.5rem)] flex-col p-3 sm:p-4 lg:flex-1">
+        <div className="sidebar-surface mobile-safe-bottom flex h-full min-h-0 flex-col p-3 sm:p-4 lg:flex-1">
           <div className={cn("rounded-[28px] border border-border bg-[color:var(--card-strong)] px-4 py-4 shadow-[0_18px_34px_rgba(15,23,42,0.08)]", collapsed ? "px-3" : "")}>
             <div className={cn("flex items-center", collapsed ? "justify-center" : "justify-between")}>
               <BrandMark className="justify-center" compact={collapsed} />
@@ -167,7 +168,7 @@ export function Sidebar({
             </div>
           ) : null}
 
-          <div className="panel-scroll mt-4 flex-1 min-h-0 space-y-4 overflow-y-auto pr-1">
+          <div className="panel-scroll mt-4 flex-1 min-h-0 space-y-4 overflow-y-auto pr-1 overscroll-contain">
             {filteredSections.map((section) => {
               const sectionOpen = openSections[section.id];
               const sectionActive = section.items.some(

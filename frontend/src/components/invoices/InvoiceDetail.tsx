@@ -65,7 +65,9 @@ export function InvoiceDetail({
 
         <div className="mt-5 flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
-            <h1 className="text-3xl font-semibold text-foreground">{documentNumber}</h1>
+            <h1 className="break-words text-3xl font-semibold text-foreground [overflow-wrap:anywhere]">
+              {documentNumber}
+            </h1>
             {documentNumber !== invoice.invoice_number ? (
               <p className="mt-2 text-sm text-[color:var(--muted)]">
                 No. sistem: {invoice.invoice_number}
@@ -213,7 +215,7 @@ export function InvoiceDetail({
             <div className="mt-6 space-y-3">
               {invoice.items.map((item, index) => (
                 <div
-                  className="rounded-[24px] border border-border bg-[color:var(--input)] p-4"
+                  className="min-w-0 rounded-[24px] border border-border bg-[color:var(--input)] p-4"
                   key={item.id}
                 >
                   <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_90px_150px_170px] sm:items-start">
@@ -321,12 +323,14 @@ function InfoPanel({
   details: Array<{ label: string; value: string }>;
 }) {
   return (
-    <div className="rounded-[28px] border border-border bg-[color:var(--input)] p-5">
+    <div className="min-w-0 overflow-hidden rounded-[28px] border border-border bg-[color:var(--input)] p-5">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)]">
         {eyebrow}
       </p>
-      <h3 className="mt-3 text-lg font-semibold text-foreground">{title}</h3>
-      <p className="mt-3 whitespace-pre-line text-sm leading-6 text-[color:var(--muted)]">
+      <h3 className="mt-3 break-words text-lg font-semibold text-foreground [overflow-wrap:anywhere]">
+        {title}
+      </h3>
+      <p className="mt-3 whitespace-pre-line break-words text-sm leading-6 text-[color:var(--muted)] [overflow-wrap:anywhere]">
         {address}
       </p>
 
@@ -345,7 +349,9 @@ function MetricCard({ label, value }: { label: string; value: string }) {
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
         {label}
       </p>
-      <p className="mt-3 text-sm font-semibold leading-6 text-foreground">{value}</p>
+      <p className="mt-3 break-words text-sm font-semibold leading-6 text-foreground [overflow-wrap:anywhere]">
+        {value}
+      </p>
     </div>
   );
 }
@@ -358,9 +364,11 @@ function DetailRow({
   value: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4">
-      <span className="text-[color:var(--muted)]">{label}</span>
-      <span className="max-w-[62%] text-right font-medium text-foreground">{value}</span>
+    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+      <span className="shrink-0 text-[color:var(--muted)]">{label}</span>
+      <span className="min-w-0 break-words text-left font-medium text-foreground [overflow-wrap:anywhere] sm:max-w-[62%] sm:text-right">
+        {value}
+      </span>
     </div>
   );
 }
@@ -373,11 +381,11 @@ function InvoiceField({
   value: ReactNode;
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--muted)]">
         {label}
       </p>
-      <div className="mt-2 text-sm text-foreground">{value}</div>
+      <div className="mt-2 break-words text-sm text-foreground [overflow-wrap:anywhere]">{value}</div>
     </div>
   );
 }

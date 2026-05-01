@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eraser, Search, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/axios";
@@ -25,10 +26,13 @@ const statusTabs: Array<{ label: string; value: InvoiceStatus | "all" }> = [
 ];
 
 export default function InvoicesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const statusParam = searchParams.get("status");
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState<InvoiceStatus | "all">("all");
+  const [status, setStatus] = useState<InvoiceStatus | "all">(getStatusFromQuery(statusParam));
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const { invoices, loading, pagination, refresh } = useInvoices({
@@ -47,6 +51,13 @@ export default function InvoicesPage() {
 
     return () => window.clearTimeout(timer);
   }, [searchInput]);
+
+  useEffect(() => {
+    const nextStatus = getStatusFromQuery(statusParam);
+
+    setStatus((currentStatus) => (currentStatus === nextStatus ? currentStatus : nextStatus));
+    setPage(1);
+  }, [statusParam]);
 
   async function handleDownload(invoice: Invoice) {
     try {
@@ -107,21 +118,21 @@ export default function InvoicesPage() {
       <Card className="fade-up">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <CardTitle>Daftar Invoice</CardTitle>
-          <div className="flex flex-wrap gap-3">
-            <Button onClick={handleClearInvoices} variant="danger">
+          <div className="grid w-full gap-3 sm:flex sm:w-auto sm:flex-wrap">
+            <Button className="w-full sm:w-auto" onClick={handleClearInvoices} variant="danger">
               <Eraser className="mr-2 h-4 w-4" />
               Clear Invoice
             </Button>
-            <Button asChild>
+            <Button asChild className="w-full sm:w-auto">
               <Link href="/invoices/create">Buat Invoice</Link>
             </Button>
           </div>
         </div>
 
-        <div className="mt-6 flex flex-wrap gap-2">
+        <div className="mt-6 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
           {statusTabs.map((tab) => (
             <button
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              className={`shrink-0 snap-start rounded-full px-4 py-2 text-sm font-medium transition ${
                 status === tab.value
                   ? "bg-slate-950 text-white shadow-[0_14px_28px_rgba(15,23,42,0.16)]"
                   : "border border-white/80 bg-white/70 text-slate-600 hover:bg-white"
@@ -130,6 +141,10 @@ export default function InvoicesPage() {
               onClick={() => {
                 setStatus(tab.value);
                 setPage(1);
+                router.replace(
+                  tab.value === "all" ? "/invoices" : `/invoices?status=${tab.value}`,
+                  { scroll: false },
+                );
               }}
               type="button"
             >
@@ -191,4 +206,12 @@ export default function InvoicesPage() {
       </Card>
     </div>
   );
+}
+
+function getStatusFromQuery(value: string | null): InvoiceStatus | "all" {
+  if (!value) {
+    return "all";
+  }
+
+  return statusTabs.some((tab) => tab.value === value) ? (value as InvoiceStatus) : "all";
 }

@@ -21,8 +21,9 @@ COPY . .
 
 RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && composer install --no-dev --optimize-autoloader --no-interaction \
+    && chmod +x docker-entrypoint.sh \
     && chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 8000
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+CMD ["./docker-entrypoint.sh"]

@@ -17,10 +17,9 @@ export function BrandMark({
       </div>
       {!compact ? (
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[color:var(--muted)]">
+          <p className="truncate text-sm font-semibold uppercase tracking-[0.22em] text-foreground">
             Invoice
           </p>
-          <p className="truncate text-base font-semibold text-foreground">Logo Sementara</p>
         </div>
       ) : null}
     </div>

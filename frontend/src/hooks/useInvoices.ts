@@ -28,8 +28,10 @@ export function useInvoices({
   useEffect(() => {
     let mounted = true;
 
-    async function fetchInvoices() {
-      setLoading(true);
+    async function fetchInvoices(showLoader = true) {
+      if (showLoader) {
+        setLoading(true);
+      }
 
       try {
         const response = await api.get<PaginatedResponse<Invoice>>("/invoices", {
@@ -47,16 +49,30 @@ export function useInvoices({
           setData(response.data);
         }
       } finally {
-        if (mounted) {
+        if (mounted && showLoader) {
           setLoading(false);
         }
       }
     }
 
+    function handleVisibilityRefresh() {
+      if (document.visibilityState === "visible") {
+        void fetchInvoices(false);
+      }
+    }
+
     void fetchInvoices();
+    const timer = window.setInterval(() => {
+      void fetchInvoices(false);
+    }, 60000);
+    window.addEventListener("focus", handleVisibilityRefresh);
+    document.addEventListener("visibilitychange", handleVisibilityRefresh);
 
     return () => {
       mounted = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", handleVisibilityRefresh);
+      document.removeEventListener("visibilitychange", handleVisibilityRefresh);
     };
   }, [fromDate, page, refreshKey, search, status, toDate, vendorId]);
 

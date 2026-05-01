@@ -45,6 +45,10 @@ export function VendorFormModal({
   onSaved: () => void;
 }) {
   const [submitting, setSubmitting] = useState(false);
+  const [headerFile, setHeaderFile] = useState<File | null>(null);
+  const [footerFile, setFooterFile] = useState<File | null>(null);
+  const [removeHeaderImage, setRemoveHeaderImage] = useState(false);
+  const [removeFooterImage, setRemoveFooterImage] = useState(false);
   const form = useForm<VendorFormValues>({
     resolver: zodResolver(vendorSchema),
     defaultValues: {
@@ -58,6 +62,11 @@ export function VendorFormModal({
   });
 
   useEffect(() => {
+    setHeaderFile(null);
+    setFooterFile(null);
+    setRemoveHeaderImage(false);
+    setRemoveFooterImage(false);
+
     if (initialData) {
       form.reset({
         name: initialData.name,
@@ -84,11 +93,33 @@ export function VendorFormModal({
     setSubmitting(true);
 
     try {
+      const payload = new FormData();
+
+      Object.entries(values).forEach(([key, value]) => {
+        payload.append(key, String(value ?? ""));
+      });
+
+      if (headerFile) {
+        payload.append("header_image", headerFile);
+      }
+
+      if (footerFile) {
+        payload.append("footer_image", footerFile);
+      }
+
+      if (removeHeaderImage) {
+        payload.append("remove_header_image", "1");
+      }
+
+      if (removeFooterImage) {
+        payload.append("remove_footer_image", "1");
+      }
+
       if (initialData) {
-        await api.put(`/vendors/${initialData.id}`, values);
+        await api.post(`/vendors/${initialData.id}?_method=PUT`, payload);
         toast.success("Vendor berhasil diperbarui.");
       } else {
-        await api.post("/vendors", values);
+        await api.post("/vendors", payload);
         toast.success("Vendor berhasil ditambahkan.");
       }
 
@@ -140,6 +171,58 @@ export function VendorFormModal({
           <Field label="NPWP" error={errors.npwp?.message}>
             <Input {...register("npwp")} />
           </Field>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Kop Atas (opsional)">
+              <Input
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => setHeaderFile(event.target.files?.[0] ?? null)}
+                type="file"
+              />
+              <p className="text-xs text-[color:var(--muted)]">
+                {headerFile
+                  ? `File baru: ${headerFile.name}`
+                  : initialData?.header_image_path
+                    ? "File kop atas sudah tersimpan."
+                    : "Belum ada file kop atas."}
+              </p>
+              {initialData?.header_image_path ? (
+                <label className="flex items-center gap-2 text-sm text-[color:var(--muted)]">
+                  <input
+                    checked={removeHeaderImage}
+                    onChange={(event) => setRemoveHeaderImage(event.target.checked)}
+                    type="checkbox"
+                  />
+                  Hapus kop atas lama
+                </label>
+              ) : null}
+            </Field>
+
+            <Field label="Kop Bawah (opsional)">
+              <Input
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => setFooterFile(event.target.files?.[0] ?? null)}
+                type="file"
+              />
+              <p className="text-xs text-[color:var(--muted)]">
+                {footerFile
+                  ? `File baru: ${footerFile.name}`
+                  : initialData?.footer_image_path
+                    ? "File kop bawah sudah tersimpan."
+                    : "Belum ada file kop bawah."}
+              </p>
+              {initialData?.footer_image_path ? (
+                <label className="flex items-center gap-2 text-sm text-[color:var(--muted)]">
+                  <input
+                    checked={removeFooterImage}
+                    onChange={(event) => setRemoveFooterImage(event.target.checked)}
+                    type="checkbox"
+                  />
+                  Hapus kop bawah lama
+                </label>
+              ) : null}
+            </Field>
+          </div>
 
           <div className="flex justify-end gap-3 pt-2">
             <Button onClick={() => onOpenChange(false)} variant="outline">

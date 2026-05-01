@@ -102,9 +102,9 @@ export default function DashboardPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[color:var(--muted)]">
               Dashboard
             </p>
-            <h1 className="mt-3 text-3xl font-semibold text-foreground">Monitoring Invoice</h1>
+            <h1 className="mt-3 text-2xl font-semibold text-foreground sm:text-3xl">Monitoring Invoice</h1>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
             <span className="rounded-full bg-[#e9f1ff] px-4 py-2 text-sm font-semibold text-primary">
               Draft {stats?.counts.draft ?? 0}
             </span>
@@ -121,7 +121,7 @@ export default function DashboardPage() {
         </div>
       </Card>
 
-      <div className="grid gap-4 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         {statCards.map((card) => {
           const Icon = card.icon;
           const value =

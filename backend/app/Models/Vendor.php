@@ -18,6 +18,8 @@ class Vendor extends Model
         'address',
         'company_name',
         'npwp',
+        'header_image_path',
+        'footer_image_path',
     ];
 
     public function invoices(): HasMany

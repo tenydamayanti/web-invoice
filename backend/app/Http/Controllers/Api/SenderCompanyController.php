@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SenderCompany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class SenderCompanyController extends Controller
 {
@@ -32,7 +33,10 @@ class SenderCompanyController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $senderCompany = SenderCompany::create($this->validateSenderCompany($request));
+        $payload = $this->validateSenderCompany($request);
+        $payload = $this->storeLetterheadFiles($request, $payload);
+
+        $senderCompany = SenderCompany::create($payload);
 
         return response()->json([
             'message' => 'Perusahaan pengirim berhasil ditambahkan.',
@@ -52,7 +56,10 @@ class SenderCompanyController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $senderCompany = SenderCompany::query()->findOrFail($id);
-        $senderCompany->update($this->validateSenderCompany($request));
+        $payload = $this->validateSenderCompany($request);
+        $payload = $this->storeLetterheadFiles($request, $payload, $senderCompany);
+
+        $senderCompany->update($payload);
 
         return response()->json([
             'message' => 'Perusahaan pengirim berhasil diperbarui.',
@@ -63,6 +70,7 @@ class SenderCompanyController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $senderCompany = SenderCompany::query()->findOrFail($id);
+        $this->deleteLetterheadFiles($senderCompany);
         $senderCompany->delete();
 
         return response()->json([
@@ -83,6 +91,62 @@ class SenderCompanyController extends Controller
             'signature_name' => ['required', 'string', 'max:255'],
             'deduction_label' => ['required', 'string', 'max:255'],
             'deduction_percent' => ['required', 'numeric', 'min:0'],
+            'header_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'footer_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'remove_header_image' => ['nullable', 'boolean'],
+            'remove_footer_image' => ['nullable', 'boolean'],
         ]);
+    }
+
+    private function storeLetterheadFiles(
+        Request $request,
+        array $payload,
+        ?SenderCompany $senderCompany = null,
+    ): array {
+        if ($request->boolean('remove_header_image') && $senderCompany?->header_image_path) {
+            Storage::disk('public')->delete($senderCompany->header_image_path);
+            $payload['header_image_path'] = null;
+        }
+
+        if ($request->hasFile('header_image')) {
+            if ($senderCompany?->header_image_path) {
+                Storage::disk('public')->delete($senderCompany->header_image_path);
+            }
+
+            $payload['header_image_path'] = $request->file('header_image')
+                ->store('letterheads/sender-companies/headers', 'public');
+        }
+
+        if ($request->boolean('remove_footer_image') && $senderCompany?->footer_image_path) {
+            Storage::disk('public')->delete($senderCompany->footer_image_path);
+            $payload['footer_image_path'] = null;
+        }
+
+        if ($request->hasFile('footer_image')) {
+            if ($senderCompany?->footer_image_path) {
+                Storage::disk('public')->delete($senderCompany->footer_image_path);
+            }
+
+            $payload['footer_image_path'] = $request->file('footer_image')
+                ->store('letterheads/sender-companies/footers', 'public');
+        }
+
+        unset(
+            $payload['header_image'],
+            $payload['footer_image'],
+            $payload['remove_header_image'],
+            $payload['remove_footer_image'],
+        );
+
+        return $payload;
+    }
+
+    private function deleteLetterheadFiles(SenderCompany $senderCompany): void
+    {
+        foreach ([$senderCompany->header_image_path, $senderCompany->footer_image_path] as $path) {
+            if ($path) {
+                Storage::disk('public')->delete($path);
+            }
+        }
     }
 }

@@ -24,6 +24,7 @@ type LoginValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -36,6 +37,7 @@ export default function LoginPage() {
   useEffect(() => {
     async function verifyToken() {
       if (!isAuthenticated()) {
+        setCheckingSession(false);
         return;
       }
 
@@ -44,6 +46,7 @@ export default function LoginPage() {
         router.replace("/");
       } catch {
         // Interceptor akan membersihkan token jika tidak valid.
+        setCheckingSession(false);
       }
     }
 
@@ -69,6 +72,24 @@ export default function LoginPage() {
     handleSubmit,
     formState: { errors },
   } = form;
+
+  if (checkingSession) {
+    return (
+      <main className="page-frame flex min-h-screen items-center justify-center">
+        <Card className="w-full max-w-md rounded-[36px] border border-white/80 p-8 text-center shadow-[0_36px_80px_rgba(15,23,42,0.14)]">
+          <div className="flex justify-center">
+            <BrandMark compact />
+          </div>
+          <div className="mt-6 space-y-3">
+            <div className="mx-auto h-2 w-28 overflow-hidden rounded-full bg-slate-200/80">
+              <div className="h-full w-1/2 animate-pulse rounded-full bg-primary"></div>
+            </div>
+            <p className="text-sm text-[color:var(--muted)]">Menyiapkan halaman login...</p>
+          </div>
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <main className="page-frame flex min-h-screen items-center justify-center">

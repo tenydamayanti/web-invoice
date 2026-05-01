@@ -1,10 +1,20 @@
 import axios from "axios";
 import { getToken, removeToken } from "@/lib/auth";
 
+function resolveApiBaseUrl() {
+  if (typeof window !== "undefined") {
+    const { protocol, hostname } = window.location;
+
+    return `${protocol}//${hostname}:8000/api`;
+  }
+
+  return process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+}
+
 const api = axios.create({
-  // Fallback ini mencegah client bundle jatuh ke relative URL
-  // ketika env NEXT_PUBLIC_API_URL tidak ikut tersuntik saat build image.
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api",
+  // Ikuti host yang sedang dibuka user, supaya aplikasi bisa diakses
+  // baik lewat localhost maupun IP LAN tanpa rebuild ulang.
+  baseURL: resolveApiBaseUrl(),
   headers: {
     Accept: "application/json",
   },

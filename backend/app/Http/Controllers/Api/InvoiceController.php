@@ -12,6 +12,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class InvoiceController extends Controller
@@ -342,6 +343,12 @@ class InvoiceController extends Controller
             'recipient_npwp' => $invoice->vendor?->npwp ?? '',
             'document_number' => $this->makeDocumentNumber($invoice),
             'signature_date' => $this->normalizeDate($invoice->issue_date),
+            'header_image_data_uri' => $this->makeLetterheadDataUri(
+                $invoice->senderCompany?->header_image_path ?: $invoice->vendor?->header_image_path
+            ),
+            'footer_image_data_uri' => $this->makeLetterheadDataUri(
+                $invoice->senderCompany?->footer_image_path ?: $invoice->vendor?->footer_image_path
+            ),
         ]);
 
         $templateData = array_merge($defaults, $incoming);
@@ -368,6 +375,18 @@ class InvoiceController extends Controller
         }
 
         return Carbon::parse($date)->format('Y-m-d');
+    }
+
+    private function makeLetterheadDataUri(?string $path): ?string
+    {
+        if (blank($path) || ! Storage::disk('public')->exists($path)) {
+            return null;
+        }
+
+        $content = Storage::disk('public')->get($path);
+        $mimeType = Storage::disk('public')->mimeType($path) ?: 'image/png';
+
+        return 'data:'.$mimeType.';base64,'.base64_encode($content);
     }
 
 }

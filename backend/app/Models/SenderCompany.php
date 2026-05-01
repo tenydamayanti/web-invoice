@@ -23,6 +23,8 @@ class SenderCompany extends Model
         'deduction_label',
         'deduction_percent',
         'is_default',
+        'header_image_path',
+        'footer_image_path',
     ];
 
     protected function casts(): array

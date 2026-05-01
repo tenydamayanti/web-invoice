@@ -59,8 +59,8 @@ export default function UsersPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <CardTitle>Manajemen User</CardTitle>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <div className="relative min-w-[280px]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative w-full min-w-0 sm:min-w-[280px]">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--muted)]" />
               <Input
                 className="pl-10"
@@ -70,6 +70,7 @@ export default function UsersPage() {
               />
             </div>
             <Button
+              className="w-full sm:w-auto"
               onClick={() => {
                 setEditingUser(null);
                 setModalOpen(true);

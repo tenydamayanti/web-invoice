@@ -13,6 +13,8 @@ export interface Vendor {
   address: string | null;
   company_name: string;
   npwp: string | null;
+  header_image_path: string | null;
+  footer_image_path: string | null;
   created_at: string;
 }
 
@@ -29,6 +31,8 @@ export interface SenderCompany {
   deduction_label: string;
   deduction_percent: number;
   is_default: boolean;
+  header_image_path: string | null;
+  footer_image_path: string | null;
   created_at: string;
 }
 
