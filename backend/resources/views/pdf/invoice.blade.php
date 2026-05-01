@@ -8,6 +8,11 @@
             margin: 30mm 12mm 30mm;
         }
 
+        :root {
+            --amount-gap-width: 136px;
+            --amount-box-width: 136px;
+        }
+
         * {
             box-sizing: border-box;
             font-family: DejaVu Sans, sans-serif;
@@ -21,7 +26,6 @@
         }
 
         .sheet {
-            min-height: 244mm;
             position: relative;
         }
 
@@ -79,9 +83,12 @@
         }
 
         .content {
-            height: 100%;
             position: relative;
             z-index: 2;
+        }
+
+        .main-flow {
+            padding-bottom: 0;
         }
 
         .title {
@@ -209,12 +216,27 @@
 
         .items-table th {
             background: #111111;
-            border: 1px solid #111111;
+            border-top: 0;
+            border-left: 0;
+            border-right: 0;
+            border-bottom: 1px solid #111111;
             color: #ffffff;
             font-size: 9.8px;
             font-weight: 700;
             padding: 6px 10px;
             text-align: center;
+        }
+
+        .amount-gap-heading {
+            border: 0 !important;
+            width: var(--amount-gap-width);
+        }
+
+        .amount-heading {
+            border-left: 0 !important;
+            padding-left: 0;
+            text-align: center;
+            width: var(--amount-box-width);
         }
 
         .items-table td {
@@ -228,17 +250,41 @@
             font-weight: 700;
         }
 
+        .item-description-cell {
+            border-right: 0 !important;
+        }
+
+        .amount-gap-cell {
+            border-left: 0 !important;
+            border-right: 0 !important;
+            border-top: 1px solid #111111 !important;
+            border-bottom: 1px solid #111111 !important;
+            padding: 0 !important;
+            width: var(--amount-gap-width);
+        }
+
         .amount-cell {
+            border-left: 1px solid #111111 !important;
+            border-right: 1px solid #111111 !important;
             padding: 0;
-            width: 24%;
+            width: var(--amount-box-width);
+        }
+
+        .amount-gap-col {
+            width: var(--amount-gap-width);
+        }
+
+        .amount-box-col {
+            width: var(--amount-box-width);
         }
 
         .amount-table td {
             border: 0;
-            font-size: 9.6px;
+            font-size: 9.4px;
             font-weight: 400;
             padding: 5px 12px;
             vertical-align: middle;
+            white-space: nowrap;
         }
 
         .currency {
@@ -271,7 +317,7 @@
 
         .summary-label {
             font-size: 9.8px;
-            font-weight: 700;
+            font-weight: 800;
             padding: 6px 26px 6px 0;
             text-align: right;
             white-space: nowrap;
@@ -370,7 +416,7 @@
         }
 
         .bottom-panel {
-            margin-top: 34px;
+            margin-top: 44px;
             page-break-inside: avoid;
         }
 
@@ -427,8 +473,8 @@
 
         .signature-wrap {
             display: inline-block;
-            min-width: 170px;
-            width: 170px;
+            min-width: 210px;
+            width: 210px;
             margin-right: 0;
             text-align: center;
         }
@@ -436,7 +482,7 @@
         .signature-date {
             font-size: 10.8px;
             font-weight: 700;
-            margin: 0 0 112px;
+            margin: 0 0 126px;
         }
 
         .signature-name {
@@ -550,24 +596,27 @@
 
                 <table class="items-table">
                     <colgroup>
-                        <col style="width: 76%;">
-                        <col style="width: 24%;">
+                        <col>
+                        <col class="amount-gap-col">
+                        <col class="amount-box-col">
                     </colgroup>
                     <thead>
                         <tr>
                             <th>Item Description</th>
-                            <th>Amount</th>
+                            <th class="amount-gap-heading"></th>
+                            <th class="amount-heading">Amount</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($invoice->items as $item)
                             <tr>
-                                <td class="item-description">{{ $item->description }}</td>
+                                <td class="item-description item-description-cell">{{ $item->description }}</td>
+                                <td class="amount-gap-cell"></td>
                                 <td class="amount-cell">
                                     <table class="amount-table">
                                         <tr>
-                                            <td class="currency">Rp</td>
-                                            <td class="value-right">{{ number_format((float) round($item->total), 0, ',', '.') }}</td>
+                                            <td class="currency"><b>Rp</b></td>
+                                            <td class="value-right"><b>{{ number_format((float) round($item->total), 0, ',', '.') }}</b></td>
                                         </tr>
                                     </table>
                                 </td>
