@@ -6,10 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Schema;
 
 class SenderCompany extends Model
 {
     use HasFactory, SoftDeletes;
+
+    private static ?array $existingColumns = null;
 
     protected $fillable = [
         'company_name',
@@ -41,5 +44,14 @@ class SenderCompany extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public static function hasColumn(string $column): bool
+    {
+        if (self::$existingColumns === null) {
+            self::$existingColumns = Schema::getColumnListing((new static())->getTable());
+        }
+
+        return in_array($column, self::$existingColumns, true);
     }
 }

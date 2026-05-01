@@ -80,7 +80,7 @@ class SenderCompanyController extends Controller
 
     private function validateSenderCompany(Request $request): array
     {
-        return $request->validate([
+        $rules = [
             'company_name' => ['required', 'string', 'max:255'],
             'address' => ['nullable', 'string'],
             'bank_name' => ['required', 'string', 'max:255'],
@@ -89,15 +89,39 @@ class SenderCompanyController extends Controller
             'signature_city' => ['required', 'string', 'max:100'],
             'signature_role' => ['required', 'string', 'max:100'],
             'signature_name' => ['required', 'string', 'max:255'],
-            'invoice_prefix' => ['required', 'string', 'max:100'],
-            'tax_percent' => ['required', 'numeric', 'min:0'],
             'deduction_label' => ['required', 'string', 'max:255'],
-            'deduction_percent' => ['required', 'numeric', 'min:0'],
+            'deduction_percent' => ['nullable', 'numeric', 'min:0'],
             'header_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'footer_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'remove_header_image' => ['nullable', 'boolean'],
             'remove_footer_image' => ['nullable', 'boolean'],
-        ]);
+        ];
+
+        if (SenderCompany::hasColumn('invoice_prefix')) {
+            $rules['invoice_prefix'] = ['required', 'string', 'max:100'];
+        }
+
+        if (SenderCompany::hasColumn('tax_percent')) {
+            $rules['tax_percent'] = ['nullable', 'numeric', 'min:0'];
+        }
+
+        $payload = $request->validate($rules);
+
+        $payload['deduction_percent'] = (float) ($payload['deduction_percent'] ?? 0);
+
+        if (SenderCompany::hasColumn('invoice_prefix')) {
+            $payload['invoice_prefix'] = trim((string) ($payload['invoice_prefix'] ?? '')) ?: 'DIGITAL-INV';
+        } else {
+            unset($payload['invoice_prefix']);
+        }
+
+        if (SenderCompany::hasColumn('tax_percent')) {
+            $payload['tax_percent'] = (float) ($payload['tax_percent'] ?? 0);
+        } else {
+            unset($payload['tax_percent']);
+        }
+
+        return $payload;
     }
 
     private function storeLetterheadFiles(

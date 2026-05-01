@@ -80,8 +80,8 @@ export function SenderCompanyFormModal({
         signature_city: initialData.signature_city,
         signature_role: initialData.signature_role,
         signature_name: initialData.signature_name,
-        invoice_prefix: initialData.invoice_prefix,
-        tax_percent: initialData.tax_percent,
+        invoice_prefix: initialData.invoice_prefix || "DIGITAL-INV",
+        tax_percent: initialData.tax_percent ?? 0,
         deduction_label: initialData.deduction_label,
         deduction_percent: initialData.deduction_percent,
       });
@@ -109,8 +109,14 @@ export function SenderCompanyFormModal({
 
     try {
       const payload = new FormData();
+      const normalizedValues = {
+        ...values,
+        invoice_prefix: values.invoice_prefix.trim() || "DIGITAL-INV",
+        tax_percent: Number.isFinite(values.tax_percent) ? values.tax_percent : 0,
+        deduction_percent: Number.isFinite(values.deduction_percent) ? values.deduction_percent : 0,
+      };
 
-      Object.entries(values).forEach(([key, value]) => {
+      Object.entries(normalizedValues).forEach(([key, value]) => {
         payload.append(key, String(value ?? ""));
       });
 

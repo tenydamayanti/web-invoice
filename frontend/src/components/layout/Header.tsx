@@ -88,10 +88,7 @@ export function Header({
   }, [dismissedNotificationsStorageKey]);
 
   useEffect(() => {
-    window.localStorage.setItem(
-      dismissedNotificationsStorageKey,
-      JSON.stringify(dismissedNotifications),
-    );
+    writeDismissedNotifications(dismissedNotificationsStorageKey, dismissedNotifications);
   }, [dismissedNotifications, dismissedNotificationsStorageKey]);
 
   useEffect(() => {
@@ -113,7 +110,10 @@ export function Header({
         return currentValue;
       }
 
-      return [...currentValue, key];
+      const nextValue = [...currentValue, key];
+      writeDismissedNotifications(dismissedNotificationsStorageKey, nextValue);
+
+      return nextValue;
     });
   }
 
@@ -251,6 +251,18 @@ function readDismissedNotifications(storageKey: string) {
   } catch {
     window.localStorage.removeItem(storageKey);
     return [];
+  }
+}
+
+function writeDismissedNotifications(storageKey: string, notifications: string[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(notifications));
+  } catch {
+    // Ignore storage write failures so the notification UI still works in-memory.
   }
 }
 

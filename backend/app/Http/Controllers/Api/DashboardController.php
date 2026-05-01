@@ -42,7 +42,7 @@ class DashboardController extends Controller
                 ->sum('total'),
             'due_this_month' => Invoice::query()
                 ->whereBetween('due_date', [$startOfMonth->toDateString(), $endOfMonth->toDateString()])
-                ->whereNotIn('status', [Invoice::STATUS_DRAFT, Invoice::STATUS_CANCELLED])
+                ->where('status', Invoice::STATUS_OVERDUE)
                 ->count(),
             'recent_invoices' => $recentInvoices,
         ]);

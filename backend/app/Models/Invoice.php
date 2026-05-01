@@ -162,7 +162,7 @@ class Invoice extends Model
 
     private static function resolveInvoicePrefix(?int $senderCompanyId = null): string
     {
-        if ($senderCompanyId) {
+        if ($senderCompanyId && SenderCompany::hasColumn('invoice_prefix')) {
             $prefix = SenderCompany::query()->whereKey($senderCompanyId)->value('invoice_prefix');
 
             if (filled($prefix)) {
