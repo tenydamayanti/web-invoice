@@ -282,7 +282,7 @@
             border: 0;
             font-size: 9.4px;
             font-weight: 400;
-            padding: 5px 0;
+            padding: 5px 12px;
             vertical-align: middle;
             white-space: nowrap;
         }
