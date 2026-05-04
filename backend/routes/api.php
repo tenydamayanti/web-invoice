@@ -16,6 +16,10 @@ Route::prefix('auth')->group(function () {
     });
 });
 
+Route::get('/invoices/{id}/pdf/preview', [InvoiceController::class, 'previewPdf'])
+    ->middleware('signed')
+    ->name('invoices.preview-pdf');
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/vendors', [VendorController::class, 'index']);
     Route::post('/vendors', [VendorController::class, 'store']);

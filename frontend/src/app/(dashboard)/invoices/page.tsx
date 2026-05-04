@@ -128,7 +128,7 @@ export default function InvoicesPage() {
       const blobUrl = window.URL.createObjectURL(response.data);
       const link = document.createElement("a");
       link.href = blobUrl;
-      link.download = `invoice-detail-${new Date().toISOString().slice(0, 10)}.xls`;
+      link.download = `invoice-detail-${new Date().toISOString().slice(0, 10)}.xlsx`;
       document.body.appendChild(link);
       link.click();
       link.remove();
