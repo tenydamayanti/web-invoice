@@ -352,17 +352,26 @@
         }
 
         .summary-box-inner .currency,
-        .summary-total-box .currency,
+        .summary-total-box .currency{
+            padding-left: 10px;
+            text-align: left;
+            width: 60px;
+        }
+
         .amount-table .currency {
-            padding-left: 14px;
+            padding-left: 0.8px;
             text-align: left;
             width: 60px;
         }
 
         .summary-box-inner .value-right,
-        .summary-total-box .value-right,
+        .summary-total-box .value-right{
+            padding-right: 10px;
+            text-align: right;
+        }
+
         .amount-table .value-right {
-            padding-right: 14px;
+            padding-right: 0.4px;
             text-align: right;
         }
 
