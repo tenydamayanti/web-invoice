@@ -108,6 +108,32 @@ a {
   text-decoration: none;
 }
 
+input,
+select,
+textarea {
+  max-width: 100%;
+}
+
+input[type="date"],
+.date-input {
+  box-sizing: border-box;
+  display: block;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  min-inline-size: 0;
+  text-align: left;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  margin-left: 0;
+}
+
 ::selection {
   background: rgba(15, 118, 110, 0.18);
 }
