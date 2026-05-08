@@ -98,11 +98,11 @@ export function InvoiceDetail({
                 <Download className="mr-2 h-4 w-4" />
                 Download PDF
               </Button>
-              {invoice.status === "draft" ? (
+              {invoice.status === "draft" || invoice.status === "sent" || invoice.status === "overdue" ? (
                 <Button asChild variant="outline">
                   <Link href={`/invoices/${invoice.id}/edit`}>
                     <Pencil className="mr-2 h-4 w-4" />
-                    Edit
+                    {invoice.status === "draft" ? "Edit" : "Revisi"}
                   </Link>
                 </Button>
               ) : null}

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -23,14 +22,14 @@ export function VendorTable({
   onEdit: (vendor: Vendor) => void;
   onDelete: (vendor: Vendor) => void;
 }) {
+  if (loading) {
+    return null;
+  }
+
   return (
     <>
       <div className="space-y-3 md:hidden">
-        {loading
-          ? Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton className="h-40 w-full rounded-[24px]" key={index} />
-            ))
-          : vendors.map((vendor) => (
+        {vendors.map((vendor) => (
               <div className="rounded-[24px] border border-border bg-[color:var(--card-strong)] p-4" key={vendor.id}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -67,7 +66,7 @@ export function VendorTable({
                   </Button>
                 </div>
               </div>
-            ))}
+        ))}
       </div>
 
       <div className="hidden md:block">
@@ -84,15 +83,7 @@ export function VendorTable({
               </tr>
             </TableHead>
             <TableBody>
-              {loading
-                ? Array.from({ length: 5 }).map((_, index) => (
-                    <TableRow key={index}>
-                      <TableCell colSpan={6}>
-                        <Skeleton className="h-12 w-full" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                : vendors.map((vendor) => (
+              {vendors.map((vendor) => (
                     <TableRow key={vendor.id}>
                       <TableCell>
                         <Link className="font-semibold text-teal-700" href={`/vendors/${vendor.id}`}>
@@ -116,7 +107,7 @@ export function VendorTable({
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+              ))}
             </TableBody>
           </Table>
         </div>

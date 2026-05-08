@@ -295,24 +295,16 @@ export function InvoiceForm({
     let mounted = true;
 
     async function syncDocumentNumber() {
-      if (!issueDate) {
-        return;
-      }
-
-      const currentMonthKey = issueDate.slice(0, 7);
-      const initialMonthKey = initialData?.issue_date.slice(0, 7);
-
-      if (
-        mode === "edit"
-        && initialData
-        && currentMonthKey === initialMonthKey
-        && Number(senderCompanyId) === Number(initialData.sender_company_id)
-      ) {
+      if (mode === "edit" && initialData) {
         const currentNumber = getInvoiceDisplayNumber(initialData);
         setDocumentNumber(currentNumber);
         form.setValue("template_data.document_number", currentNumber, {
           shouldDirty: false,
         });
+        return;
+      }
+
+      if (!issueDate) {
         return;
       }
 
@@ -687,13 +679,13 @@ export function InvoiceForm({
           onClick={handleSubmit((values) => submitWithStatus(values, "draft"))}
           variant="outline"
         >
-          {submitting ? "Menyimpan..." : "Simpan Draft"}
+          {submitting ? "Menyimpan..." : mode === "edit" ? "Simpan sebagai Draft" : "Simpan Draft"}
         </Button>
         <Button
           disabled={submitting}
           onClick={handleSubmit((values) => submitWithStatus(values, "sent"))}
         >
-          {submitting ? "Menyimpan..." : "Buat Invoice"}
+          {submitting ? "Menyimpan..." : mode === "edit" ? "Simpan Perubahan" : "Buat Invoice"}
         </Button>
       </div>
 

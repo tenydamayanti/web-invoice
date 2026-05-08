@@ -83,7 +83,7 @@ export default function UsersPage() {
       </Card>
 
       <Card className="fade-up">
-        {users.length === 0 && !loading ? (
+        {loading ? null : users.length === 0 ? (
           <EmptyState
             description="Belum ada akun pengguna yang tersimpan di workspace ini."
             icon={UserCog}

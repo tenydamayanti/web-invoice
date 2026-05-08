@@ -2,7 +2,7 @@ import type { HTMLAttributes, TableHTMLAttributes, TdHTMLAttributes, ThHTMLAttri
 import { cn } from "@/lib/utils";
 
 export function Table({ className, ...props }: TableHTMLAttributes<HTMLTableElement>) {
-  return <table className={cn("w-max min-w-full table-auto border-separate border-spacing-0", className)} {...props} />;
+  return <table className={cn("w-full min-w-max table-auto border-separate border-spacing-0", className)} {...props} />;
 }
 
 export function TableHead({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
@@ -32,7 +32,7 @@ export function TableHeaderCell({
   return (
     <th
       className={cn(
-        "px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)]",
+        "px-3 py-2 text-left text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--muted)] sm:px-4 sm:py-3",
         className,
       )}
       {...props}
@@ -41,5 +41,5 @@ export function TableHeaderCell({
 }
 
 export function TableCell({ className, ...props }: TdHTMLAttributes<HTMLTableCellElement>) {
-  return <td className={cn("px-4 py-4 text-sm text-foreground", className)} {...props} />;
+  return <td className={cn("px-3 py-3 text-sm text-foreground align-top sm:px-4 sm:py-4", className)} {...props} />;
 }

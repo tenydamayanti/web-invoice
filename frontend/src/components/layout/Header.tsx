@@ -91,19 +91,6 @@ export function Header({
     writeDismissedNotifications(dismissedNotificationsStorageKey, dismissedNotifications);
   }, [dismissedNotifications, dismissedNotificationsStorageKey]);
 
-  useEffect(() => {
-    setDismissedNotifications((currentValue) => {
-      if (currentValue.length === 0) {
-        return currentValue;
-      }
-
-      const activeKeys = new Set(notifications.map((notification) => notification.key));
-      const nextValue = currentValue.filter((value) => activeKeys.has(value));
-
-      return nextValue;
-    });
-  }, [dismissedNotificationsStorageKey, notifications]);
-
   function handleNotificationClick(key: string) {
     setDismissedNotifications((currentValue) => {
       if (currentValue.includes(key)) {
@@ -171,7 +158,7 @@ export function Header({
                         className="block rounded-[18px] border border-border bg-[color:var(--input)] p-3 transition hover:-translate-y-0.5 hover:border-sky-200 hover:bg-white"
                         href={notification.href}
                         key={notification.key}
-                        onMouseDown={() => handleNotificationClick(notification.key)}
+
                         onClick={() => handleNotificationClick(notification.key)}
                       >
                         <div className="flex items-center justify-between gap-3">
@@ -207,13 +194,13 @@ export function Header({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="group flex items-center gap-2 rounded-[22px] border border-border bg-[color:var(--card-strong)] px-2.5 py-2.5 text-left shadow-[0_14px_30px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 sm:gap-3 sm:px-4 sm:py-3">
+              <button className="group flex items-center gap-2 rounded-[18px] border border-border bg-[color:var(--card-strong)] px-2 py-2 text-left shadow-[0_14px_30px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 sm:gap-3 sm:px-3 sm:py-2.5 lg:px-4 lg:py-3">
                 <div className="hidden min-w-0 text-right sm:block">
                   <p className="truncate text-sm font-semibold text-foreground">{user.name}</p>
                   <p className="text-xs text-[color:var(--muted)]">Online</p>
                 </div>
-                <span className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-sky-500 bg-[color:var(--card-strong)] text-primary sm:h-12 sm:w-12">
-                  <UserCircle2 className="h-5 w-5 sm:h-6 sm:w-6" />
+                <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-sky-500 bg-[color:var(--card-strong)] text-primary sm:h-10 sm:w-10 lg:h-12 lg:w-12">
+                  <UserCircle2 className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
                 </span>
                 <ChevronDown className="hidden h-4 w-4 text-[color:var(--muted)] transition group-hover:text-foreground sm:block" />
               </button>
@@ -231,27 +218,61 @@ export function Header({
   );
 }
 
+function normalizeNotificationKey(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmedValue = value.trim();
+
+  const invoiceMatch = /^invoice-(\d+)(?:-(draft|sent|paid|overdue|cancelled))?$/.exec(trimmedValue);
+
+  if (invoiceMatch) {
+    return `invoice-${invoiceMatch[1]}`;
+  }
+
+  return trimmedValue || null;
+}
+
 function readDismissedNotifications(storageKey: string) {
   if (typeof window === "undefined") {
     return [];
   }
 
-  try {
-    const storedValue = window.localStorage.getItem(storageKey);
+  const fallbackStorageKey = DISMISSED_NOTIFICATIONS_KEY;
 
-    if (!storedValue) {
-      return [];
+  function parseStoredValue(value: string | null) {
+    if (!value) {
+      return [] as string[];
     }
 
-    const parsedValue = JSON.parse(storedValue);
+    try {
+      const parsedValue = JSON.parse(value);
 
-    return Array.isArray(parsedValue)
-      ? parsedValue.filter((value): value is string => typeof value === "string")
-      : [];
-  } catch {
-    window.localStorage.removeItem(storageKey);
+      return Array.isArray(parsedValue)
+        ? parsedValue
+            .map(normalizeNotificationKey)
+            .filter((value): value is string => typeof value === "string")
+        : [];
+    } catch {
+      return [];
+    }
+  }
+
+  const currentValue = parseStoredValue(window.localStorage.getItem(storageKey));
+  const fallbackValue = parseStoredValue(window.localStorage.getItem(fallbackStorageKey));
+
+  const mergedValues = Array.from(new Set([...currentValue, ...fallbackValue]));
+
+  if (mergedValues.length > 0 && currentValue.length === 0 && fallbackValue.length > 0) {
+    writeDismissedNotifications(storageKey, mergedValues);
+  }
+
+  if (mergedValues.length === 0) {
     return [];
   }
+
+  return mergedValues;
 }
 
 function writeDismissedNotifications(storageKey: string, notifications: string[]) {
@@ -385,7 +406,7 @@ function buildNotifications(stats: DashboardStats | null) {
     .slice(0, 2)
     .forEach((invoice) => {
       notifications.push({
-        key: `invoice-${invoice.id}-${invoice.status}`,
+        key: `invoice-${invoice.id}`,
         title: invoice.vendor?.company_name || "Invoice terbaru",
         message: `Status saat ini: ${getStatusLabel(invoice.status)}.`,
         href: `/invoices/${invoice.id}`,

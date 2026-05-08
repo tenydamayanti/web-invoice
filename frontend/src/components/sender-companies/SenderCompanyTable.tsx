@@ -1,6 +1,5 @@
 import { Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -22,14 +21,14 @@ export function SenderCompanyTable({
   onEdit: (senderCompany: SenderCompany) => void;
   onDelete: (senderCompany: SenderCompany) => void;
 }) {
+  if (loading) {
+    return null;
+  }
+
   return (
     <>
       <div className="space-y-3 md:hidden">
-        {loading
-          ? Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton className="h-44 w-full rounded-[24px]" key={index} />
-            ))
-          : senderCompanies.map((senderCompany) => (
+        {senderCompanies.map((senderCompany) => (
               <div className="rounded-[24px] border border-border bg-[color:var(--card-strong)] p-4" key={senderCompany.id}>
                 <p className="break-words text-base font-semibold text-teal-700 [overflow-wrap:anywhere]">
                   {senderCompany.company_name}
@@ -75,7 +74,7 @@ export function SenderCompanyTable({
                   </Button>
                 </div>
               </div>
-            ))}
+        ))}
       </div>
 
       <div className="hidden md:block">
@@ -94,15 +93,7 @@ export function SenderCompanyTable({
               </tr>
             </TableHead>
             <TableBody>
-              {loading
-                ? Array.from({ length: 5 }).map((_, index) => (
-                    <TableRow key={index}>
-                      <TableCell colSpan={8}>
-                        <Skeleton className="h-12 w-full" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                : senderCompanies.map((senderCompany) => (
+              {senderCompanies.map((senderCompany) => (
                     <TableRow key={senderCompany.id}>
                       <TableCell className="font-semibold text-teal-700">
                         {senderCompany.company_name}
@@ -136,7 +127,7 @@ export function SenderCompanyTable({
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+              ))}
             </TableBody>
           </Table>
         </div>

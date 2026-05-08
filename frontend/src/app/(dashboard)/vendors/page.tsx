@@ -77,7 +77,7 @@ export default function VendorsPage() {
       </Card>
 
       <Card className="fade-up">
-        {vendors.length === 0 && !loading ? (
+        {loading ? null : vendors.length === 0 ? (
           <EmptyState icon={Users} title="Belum ada vendor" />
         ) : (
           <>

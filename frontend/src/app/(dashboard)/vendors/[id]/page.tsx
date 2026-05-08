@@ -92,7 +92,7 @@ export default function VendorDetailPage() {
         <CardTitle>Riwayat Invoice Vendor</CardTitle>
 
         <div className="mt-6">
-          {!loading && invoices.length === 0 ? (
+          {loading ? null : invoices.length === 0 ? (
             <EmptyState icon={Building2} title="Belum ada invoice" />
           ) : (
             <>
@@ -107,15 +107,7 @@ export default function VendorDetailPage() {
                     </tr>
                   </TableHead>
                   <TableBody>
-                    {loading
-                      ? Array.from({ length: 4 }).map((_, index) => (
-                          <TableRow key={index}>
-                            <TableCell colSpan={4}>
-                              <Skeleton className="h-12 w-full" />
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      : invoices.map((invoice) => (
+                    {invoices.map((invoice) => (
                           <TableRow key={invoice.id}>
                             <TableCell className="font-semibold text-teal-700">
                               {invoice.invoice_number}

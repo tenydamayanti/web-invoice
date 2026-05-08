@@ -22,7 +22,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const classes = cn(
-    "inline-flex h-11 items-center justify-center rounded-2xl px-5 text-sm font-medium transition duration-200 focus-visible:outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-60",
+    "inline-flex h-10 items-center justify-center rounded-xl px-4 text-sm font-medium transition duration-200 focus-visible:outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-60 sm:h-11 sm:rounded-2xl sm:px-5",
     variant === "primary" &&
       "bg-primary text-primary-foreground shadow-[0_16px_30px_rgba(29,78,216,0.18)] hover:-translate-y-0.5 hover:bg-[#1e40af]",
     variant === "secondary" &&

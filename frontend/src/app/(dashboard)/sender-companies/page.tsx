@@ -77,7 +77,7 @@ export default function SenderCompaniesPage() {
       </Card>
 
       <Card className="fade-up">
-        {senderCompanies.length === 0 && !loading ? (
+        {loading ? null : senderCompanies.length === 0 ? (
           <EmptyState icon={Building2} title="Belum ada perusahaan pengirim" />
         ) : (
           <>

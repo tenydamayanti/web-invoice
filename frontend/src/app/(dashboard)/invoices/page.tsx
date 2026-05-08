@@ -143,7 +143,7 @@ export default function InvoicesPage() {
       <Card className="fade-up">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <CardTitle>Daftar Invoice</CardTitle>
-          <div className="grid w-full gap-3 sm:flex sm:w-auto sm:flex-wrap">
+          <div className="grid w-full gap-3 sm:flex sm:w-auto sm:flex-wrap lg:justify-end">
             <Button className="w-full sm:w-auto" onClick={handleExportExcel} variant="outline">
               <FileSpreadsheet className="mr-2 h-4 w-4" />
               Export Excel
@@ -158,10 +158,10 @@ export default function InvoicesPage() {
           </div>
         </div>
 
-        <div className="mt-6 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
+        <div className="mt-6 flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:overflow-visible sm:pb-0">
           {statusTabs.map((tab) => (
             <button
-              className={`shrink-0 snap-start rounded-full px-4 py-2 text-sm font-medium transition ${
+              className={`shrink-0 snap-start rounded-full px-3 py-2 text-sm font-medium transition sm:px-4 ${
                 status === tab.value
                   ? "bg-slate-950 text-white shadow-[0_14px_28px_rgba(15,23,42,0.16)]"
                   : "border border-white/80 bg-white/70 text-slate-600 hover:bg-white"
@@ -182,7 +182,7 @@ export default function InvoicesPage() {
           ))}
         </div>
 
-        <div className="mt-6 grid gap-3 xl:grid-cols-[minmax(0,1fr)_180px_180px]">
+        <div className="mt-6 grid gap-3 xl:grid-cols-[minmax(0,1fr)_160px_160px]">
           <div className="relative">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
@@ -212,7 +212,7 @@ export default function InvoicesPage() {
       </Card>
 
       <Card className="fade-up">
-        {!loading && invoices.length === 0 ? (
+        {loading ? null : invoices.length === 0 ? (
           <EmptyState icon={WalletCards} title="Tidak ada invoice" />
         ) : (
           <>

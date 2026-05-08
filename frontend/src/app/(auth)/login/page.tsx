@@ -29,8 +29,8 @@ export default function LoginPage() {
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "admin@invoice.com",
-      password: "password123",
+      email: "",
+      password: "",
     },
   });
 
@@ -107,13 +107,13 @@ export default function LoginPage() {
           </CardTitle>
         </div>
 
-        <form className="mt-8 space-y-4" onSubmit={handleSubmit(onSubmit)}>
+        <form autoComplete="off" className="mt-8 space-y-4" onSubmit={handleSubmit(onSubmit)}>
           <Field label="Email" error={errors.email?.message}>
-            <Input {...register("email")} />
+            <Input {...register("email")} autoComplete="off" type="email" />
           </Field>
 
           <Field label="Password" error={errors.password?.message}>
-            <Input type="password" {...register("password")} />
+            <Input type="password" {...register("password")} autoComplete="new-password" />
           </Field>
 
           <Button className="w-full" disabled={submitting} type="submit">
