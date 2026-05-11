@@ -1,7 +1,6 @@
 import { Pencil, Trash2, UserCog } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -23,14 +22,14 @@ export function UserTable({
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
 }) {
+  if (loading) {
+    return null;
+  }
+
   return (
     <>
       <div className="space-y-3 md:hidden">
-        {loading
-          ? Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton className="h-36 w-full rounded-[24px]" key={index} />
-            ))
-          : users.map((user) => (
+        {users.map((user) => (
               <div className="rounded-[24px] border border-border bg-[color:var(--card-strong)] p-4" key={user.id}>
                 <div className="flex items-start gap-3">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-border bg-[color:var(--input)] text-primary">
@@ -65,7 +64,7 @@ export function UserTable({
                   </Button>
                 </div>
               </div>
-            ))}
+        ))}
       </div>
 
       <div className="hidden md:block">
@@ -80,15 +79,7 @@ export function UserTable({
               </tr>
             </TableHead>
             <TableBody>
-              {loading
-                ? Array.from({ length: 5 }).map((_, index) => (
-                    <TableRow key={index}>
-                      <TableCell colSpan={4}>
-                        <Skeleton className="h-12 w-full" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                : users.map((user) => (
+              {users.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -123,7 +114,7 @@ export function UserTable({
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+              ))}
             </TableBody>
           </Table>
         </div>

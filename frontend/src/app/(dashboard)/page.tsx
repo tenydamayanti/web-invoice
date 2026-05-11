@@ -196,42 +196,73 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="mt-6 table-scroll">
-            <Table>
-              <TableHead>
-                <tr>
-                  <TableHeaderCell>No. Invoice</TableHeaderCell>
-                  <TableHeaderCell>Vendor</TableHeaderCell>
-                  <TableHeaderCell>Total</TableHeaderCell>
-                  <TableHeaderCell>Status</TableHeaderCell>
-                  <TableHeaderCell>Tanggal</TableHeaderCell>
-                </tr>
-              </TableHead>
-              <TableBody>
-                {loading
-                  ? Array.from({ length: 5 }).map((_, index) => (
-                      <TableRow key={index}>
-                        <TableCell colSpan={5}>
-                          <Skeleton className="h-12 w-full" />
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  : stats?.recent_invoices.map((invoice) => (
-                      <TableRow key={invoice.id}>
-                        <TableCell className="font-semibold text-teal-700">
+          {!loading ? (
+            <>
+              <div className="mt-6 space-y-3 md:hidden">
+                {stats?.recent_invoices.map((invoice) => (
+                  <div
+                    className="min-w-0 rounded-[20px] border border-border bg-[color:var(--input)] p-4"
+                    key={invoice.id}
+                  >
+                    <div className="flex min-w-0 items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="break-words text-sm font-semibold text-teal-700 [overflow-wrap:anywhere]">
                           {getInvoiceDisplayNumber(invoice)}
-                        </TableCell>
-                        <TableCell>{invoice.vendor?.company_name || "-"}</TableCell>
-                        <TableCell>{formatCurrency(invoice.total)}</TableCell>
-                        <TableCell>
-                          <StatusBadge status={invoice.status} />
-                        </TableCell>
-                        <TableCell>{formatDate(invoice.issue_date)}</TableCell>
-                      </TableRow>
-                    ))}
-              </TableBody>
-            </Table>
-          </div>
+                        </p>
+                        <p className="mt-1 break-words text-sm text-[color:var(--muted)] [overflow-wrap:anywhere]">
+                          {invoice.vendor?.company_name || "-"}
+                        </p>
+                      </div>
+                      <StatusBadge status={invoice.status} />
+                    </div>
+                    <div className="mt-4 grid gap-3 text-sm">
+                      <div>
+                        <p className="text-[color:var(--muted)]">Total</p>
+                        <p className="mt-1 break-words font-semibold [overflow-wrap:anywhere]">
+                          {formatCurrency(invoice.total)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[color:var(--muted)]">Tanggal</p>
+                        <p className="mt-1">{formatDate(invoice.issue_date)}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 hidden md:block">
+                <div className="table-scroll">
+                  <Table>
+                    <TableHead>
+                      <tr>
+                        <TableHeaderCell>No. Invoice</TableHeaderCell>
+                        <TableHeaderCell>Vendor</TableHeaderCell>
+                        <TableHeaderCell>Total</TableHeaderCell>
+                        <TableHeaderCell>Status</TableHeaderCell>
+                        <TableHeaderCell>Tanggal</TableHeaderCell>
+                      </tr>
+                    </TableHead>
+                    <TableBody>
+                      {stats?.recent_invoices.map((invoice) => (
+                        <TableRow key={invoice.id}>
+                          <TableCell className="font-semibold text-teal-700">
+                            {getInvoiceDisplayNumber(invoice)}
+                          </TableCell>
+                          <TableCell>{invoice.vendor?.company_name || "-"}</TableCell>
+                          <TableCell>{formatCurrency(invoice.total)}</TableCell>
+                          <TableCell>
+                            <StatusBadge status={invoice.status} />
+                          </TableCell>
+                          <TableCell>{formatDate(invoice.issue_date)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </>
+          ) : null}
           {!loading ? (
             <Pagination
               currentPage={1}

@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { Download, Eye, Trash2 } from "lucide-react";
+import { Download, Eye, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -26,15 +25,18 @@ export function InvoiceTable({
   onDownload: (invoice: Invoice) => void;
   onDelete: (invoice: Invoice) => void;
 }) {
+  if (loading) {
+    return null;
+  }
+
   return (
     <>
-      <div className="space-y-3 md:hidden">
-        {loading
-          ? Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton className="h-48 w-full rounded-[24px]" key={index} />
-            ))
-          : invoices.map((invoice) => (
-              <div className="rounded-[24px] border border-border bg-[color:var(--card-strong)] p-4" key={invoice.id}>
+      <div className="space-y-4 md:hidden">
+        {invoices.map((invoice) => (
+              <div
+                className={`rounded-[20px] border p-4 ${invoice.status === "overdue" ? "border-rose-300 bg-rose-50" : "border-border bg-[color:var(--card-strong)]"}`}
+                key={invoice.id}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="break-words text-base font-semibold text-teal-700 [overflow-wrap:anywhere]">
@@ -62,26 +64,34 @@ export function InvoiceTable({
                     </dd>
                   </div>
                 </dl>
-                <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  <Button asChild className="h-10 rounded-xl px-3" variant="outline">
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <Button asChild className="h-9 rounded-xl px-3" variant="outline">
                     <Link href={`/invoices/${invoice.id}`}>
                       <Eye className="mr-2 h-4 w-4" />
                       Lihat
                     </Link>
                   </Button>
-                  <Button className="h-10 rounded-xl px-3" onClick={() => onDownload(invoice)} variant="secondary">
+                  <Button className="h-9 rounded-xl px-3" onClick={() => onDownload(invoice)} variant="secondary">
                     <Download className="mr-2 h-4 w-4" />
                     PDF
                   </Button>
+                  {invoice.status !== "paid" && invoice.status !== "cancelled" ? (
+                    <Button asChild className="h-9 rounded-xl px-3" variant="outline">
+                      <Link href={`/invoices/${invoice.id}/edit`}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Revisi
+                      </Link>
+                    </Button>
+                  ) : null}
                   {invoice.status === "draft" ? (
-                    <Button className="col-span-2 h-10 rounded-xl px-3" onClick={() => onDelete(invoice)} variant="danger">
+                    <Button className="h-9 rounded-xl px-3 sm:col-span-2" onClick={() => onDelete(invoice)} variant="danger">
                       <Trash2 className="mr-2 h-4 w-4" />
                       Hapus Draft
                     </Button>
                   ) : null}
                 </div>
               </div>
-            ))}
+        ))}
       </div>
 
       <div className="hidden md:block">
@@ -99,16 +109,8 @@ export function InvoiceTable({
               </tr>
             </TableHead>
             <TableBody>
-              {loading
-                ? Array.from({ length: 5 }).map((_, index) => (
-                    <TableRow key={index}>
-                      <TableCell colSpan={7}>
-                        <Skeleton className="h-12 w-full" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                : invoices.map((invoice) => (
-                    <TableRow key={invoice.id}>
+              {invoices.map((invoice) => (
+                    <TableRow key={invoice.id} className={invoice.status === "overdue" ? "bg-rose-50" : undefined}>
                       <TableCell className="font-semibold text-teal-700">
                         {getInvoiceDisplayNumber(invoice)}
                       </TableCell>
@@ -135,6 +137,14 @@ export function InvoiceTable({
                             <Download className="mr-2 h-4 w-4" />
                             PDF
                           </Button>
+                          {invoice.status !== "paid" && invoice.status !== "cancelled" ? (
+                            <Button asChild className="h-9 rounded-xl px-3" variant="outline">
+                              <Link href={`/invoices/${invoice.id}/edit`}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Revisi
+                              </Link>
+                            </Button>
+                          ) : null}
                           {invoice.status === "draft" ? (
                             <Button
                               className="h-9 rounded-xl px-3"
@@ -148,7 +158,7 @@ export function InvoiceTable({
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+              ))}
             </TableBody>
           </Table>
         </div>

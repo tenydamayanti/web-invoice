@@ -107,9 +107,9 @@ class InvoiceController extends Controller
     {
         $invoice = Invoice::query()->with('items')->findOrFail($id);
 
-        if ($invoice->status !== Invoice::STATUS_DRAFT) {
+        if (! in_array($invoice->status, [Invoice::STATUS_DRAFT, Invoice::STATUS_SENT, Invoice::STATUS_OVERDUE], true)) {
             return response()->json([
-                'message' => 'Hanya invoice draft yang dapat diubah.',
+                'message' => 'Hanya invoice dengan status draft, terbit, atau jatuh tempo yang dapat diubah.',
             ], 422);
         }
 
@@ -117,25 +117,9 @@ class InvoiceController extends Controller
 
         $updatedInvoice = DB::transaction(function () use ($invoice, $payload) {
             $calculated = $this->calculateTotals($payload['items'], $payload['template_data'] ?? []);
-            $newIssueDate = Carbon::parse($payload['issue_date']);
-            $currentIssueDate = $invoice->issue_date instanceof Carbon
-                ? $invoice->issue_date
-                : Carbon::parse($invoice->issue_date);
-            $invoiceNumber = $invoice->invoice_number;
-
-            if (
-                $newIssueDate->format('Y-m') !== $currentIssueDate->format('Y-m')
-                || (int) $invoice->sender_company_id !== (int) $payload['sender_company_id']
-            ) {
-                $invoiceNumber = Invoice::previewNextInvoiceNumberForSender(
-                    $newIssueDate,
-                    $payload['sender_company_id'],
-                    $invoice->id,
-                );
-            }
 
             $invoice->update([
-                'invoice_number' => $invoiceNumber,
+                'invoice_number' => $invoice->invoice_number,
                 'vendor_id' => $payload['vendor_id'],
                 'sender_company_id' => $payload['sender_company_id'],
                 'issue_date' => $payload['issue_date'],
