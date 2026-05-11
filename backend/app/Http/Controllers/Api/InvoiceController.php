@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
+use App\Models\ManualInvoiceNumberLog;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -85,6 +86,21 @@ class InvoiceController extends Controller
             $invoice->update([
                 'template_data' => $this->resolveTemplateData($payload['template_data'] ?? [], $invoice),
             ]);
+
+            if ((int) ($payload['manual_last_sequence'] ?? 0) > 0) {
+                $issueDate = Carbon::parse($payload['issue_date']);
+
+                ManualInvoiceNumberLog::query()->create([
+                    'user_id' => $request->user()->id,
+                    'sender_company_id' => $payload['sender_company_id'],
+                    'invoice_id' => $invoice->id,
+                    'issue_date' => $issueDate->toDateString(),
+                    'period_year' => $issueDate->year,
+                    'period_month' => $issueDate->month,
+                    'manual_last_sequence' => (int) $payload['manual_last_sequence'],
+                    'generated_invoice_number' => $invoice->invoice_number,
+                ]);
+            }
 
             return $invoice->load(['vendor', 'senderCompany', 'items']);
         });

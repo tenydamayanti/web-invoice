@@ -121,3 +121,16 @@ export interface DashboardStats {
   due_this_month: number;
   recent_invoices: Invoice[];
 }
+
+export interface ManualInvoiceNumberLog {
+  id: number;
+  user: Pick<User, "id" | "name" | "email" | "role">;
+  sender_company: Pick<SenderCompany, "id" | "company_name" | "invoice_prefix"> | null;
+  invoice: Pick<Invoice, "id" | "invoice_number"> | null;
+  issue_date: string;
+  period_year: number;
+  period_month: number;
+  manual_last_sequence: number;
+  generated_invoice_number: string;
+  created_at: string;
+}

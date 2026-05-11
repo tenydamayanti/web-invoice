@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\InvoiceController;
+use App\Http\Controllers\Api\ManualInvoiceNumberLogController;
 use App\Http\Controllers\Api\SenderCompanyController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\VendorController;
@@ -50,4 +51,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/invoices/{id}/pdf', [InvoiceController::class, 'downloadPdf']);
 
     Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+    Route::get('/manual-invoice-number-logs', [ManualInvoiceNumberLogController::class, 'index']);
 });
