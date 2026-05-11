@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -120,9 +121,14 @@ class InvoiceController extends Controller
 
         $updatedInvoice = DB::transaction(function () use ($invoice, $payload) {
             $calculated = $this->calculateTotals($payload['items'], $payload['template_data'] ?? []);
+            $oldIssueDate = $invoice->issue_date;
+            $oldSenderCompanyId = $invoice->sender_company_id;
+            $invoiceNumber = $this->resolveRevisedInvoiceNumber($payload, $invoice);
+
+            $this->ensureInvoiceNumberIsUnique($invoiceNumber, $invoice->id);
 
             $invoice->update([
-                'invoice_number' => $invoice->invoice_number,
+                'invoice_number' => $invoiceNumber,
                 'vendor_id' => $payload['vendor_id'],
                 'sender_company_id' => $payload['sender_company_id'],
                 'issue_date' => $payload['issue_date'],
@@ -143,6 +149,9 @@ class InvoiceController extends Controller
             $invoice->update([
                 'template_data' => $this->resolveTemplateData($payload['template_data'] ?? [], $invoice),
             ]);
+
+            Invoice::syncStoredSequenceForSenderPeriod($oldIssueDate, $oldSenderCompanyId);
+            Invoice::syncStoredSequenceForSenderPeriod($invoice->issue_date, $invoice->sender_company_id);
 
             return $invoice->load(['vendor', 'senderCompany', 'items']);
         });
@@ -250,7 +259,7 @@ class InvoiceController extends Controller
 
     private function validateInvoice(Request $request): array
     {
-        return $request->validate([
+        $payload = $request->validate([
             'vendor_id' => [
                 'required',
                 'integer',
@@ -272,7 +281,7 @@ class InvoiceController extends Controller
             'template_data.recipient_company_name' => ['nullable', 'string'],
             'template_data.recipient_address' => ['nullable', 'string'],
             'template_data.recipient_npwp' => ['nullable', 'string'],
-            'template_data.document_number' => ['nullable', 'string'],
+            'template_data.document_number' => ['nullable', 'string', 'max:100'],
             'template_data.contract_number' => ['nullable', 'string'],
             'template_data.payment_bank_name' => ['nullable', 'string'],
             'template_data.payment_account_number' => ['nullable', 'string'],
@@ -287,6 +296,8 @@ class InvoiceController extends Controller
             'items.*.quantity' => ['required', 'numeric', 'gt:0'],
             'items.*.unit_price' => ['required', 'numeric', 'gt:0'],
         ]);
+
+        return $payload;
     }
 
     private function calculateTotals(array $items, array $templateData = []): array
@@ -364,6 +375,61 @@ class InvoiceController extends Controller
     private function makeDocumentNumber(Invoice $invoice): string
     {
         return $invoice->invoice_number;
+    }
+
+    private function normalizeInvoiceNumber(?string $invoiceNumber, string $fallback): string
+    {
+        $normalized = trim((string) $invoiceNumber);
+
+        return $normalized !== '' ? $normalized : $fallback;
+    }
+
+    private function resolveRevisedInvoiceNumber(array $payload, Invoice $invoice): string
+    {
+        $sourceNumber = $this->normalizeInvoiceNumber(
+            $payload['template_data']['document_number'] ?? null,
+            $invoice->invoice_number,
+        );
+        $sequence = $this->extractInvoiceSequence($sourceNumber);
+
+        return Invoice::formatDocumentNumberForSender(
+            $payload['issue_date'],
+            $payload['sender_company_id'],
+            $sequence,
+        );
+    }
+
+    private function extractInvoiceSequence(string $invoiceNumber): int
+    {
+        if (! preg_match('/^\s*(\d+)/', $invoiceNumber, $matches)) {
+            throw ValidationException::withMessages([
+                'template_data.document_number' => ['Nomor urut invoice wajib diisi.'],
+            ]);
+        }
+
+        $sequence = (int) $matches[1];
+
+        if ($sequence < 1) {
+            throw ValidationException::withMessages([
+                'template_data.document_number' => ['Nomor urut invoice minimal 1.'],
+            ]);
+        }
+
+        return $sequence;
+    }
+
+    private function ensureInvoiceNumberIsUnique(string $invoiceNumber, ?int $invoiceId = null): void
+    {
+        $exists = Invoice::withTrashed()
+            ->where('invoice_number', $invoiceNumber)
+            ->when($invoiceId, fn (Builder $query) => $query->where('id', '!=', $invoiceId))
+            ->exists();
+
+        if ($exists) {
+            throw ValidationException::withMessages([
+                'template_data.document_number' => ['Nomor invoice sudah digunakan.'],
+            ]);
+        }
     }
 
     private function normalizeDate(Carbon|string|null $date): string

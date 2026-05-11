@@ -62,7 +62,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             "desktop-window",
             sidebarCollapsed
               ? "lg:grid-cols-[96px_minmax(0,1fr)]"
-              : "lg:grid-cols-[300px_minmax(0,1fr)]",
+              : "lg:grid-cols-[clamp(240px,18vw,300px)_minmax(0,1fr)]",
           )}
         >
           <Sidebar

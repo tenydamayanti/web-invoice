@@ -169,7 +169,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 
   .page-frame {
-    @apply mx-auto w-full max-w-[1680px] px-4 py-4 sm:px-5 sm:py-4 lg:px-8 lg:py-5 xl:px-10;
+    @apply mx-auto w-full max-w-[1800px] px-3 py-3 sm:px-4 sm:py-4 lg:px-5 lg:py-5 2xl:px-8;
     min-width: 0;
   }
 
@@ -294,7 +294,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 
   .content-stage {
-    @apply flex-1 px-4 pb-4 pt-2 sm:px-5 sm:pb-5 lg:px-6 lg:pb-6 xl:px-8;
+    @apply flex-1 px-3 pb-4 pt-2 sm:px-4 sm:pb-5 lg:px-5 lg:pb-6 2xl:px-8;
     min-width: 0;
     max-width: 100%;
     overflow-x: clip;
@@ -309,7 +309,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     position: sticky;
     top: max(0.5rem, env(safe-area-inset-top));
     z-index: 10;
-    margin: 0.5rem 0.5rem 0.5rem;
+    margin: 0.5rem 0.5rem 0.75rem;
     border: 1px solid var(--border);
     border-radius: 20px;
     background:
@@ -328,7 +328,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 
   .toolbar-button {
-    @apply inline-flex h-9 w-9 items-center justify-center rounded-xl border text-foreground transition sm:h-10 sm:w-10 lg:h-11 lg:w-11 lg:rounded-2xl;
+    @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-foreground transition sm:h-10 sm:w-10 lg:h-11 lg:w-11 lg:rounded-2xl;
     border-color: var(--border);
     background: color-mix(in srgb, var(--card-strong) 88%, transparent);
     box-shadow: 0 10px 26px rgba(148, 163, 184, 0.12);
@@ -364,7 +364,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
 
   .sidebar-item {
-    @apply flex items-center gap-3 rounded-[20px] px-4 py-3 text-sm font-medium text-foreground transition;
+    @apply flex min-w-0 items-center gap-3 rounded-[20px] px-3 py-3 text-sm font-medium text-foreground transition xl:px-4;
+  }
+
+  .sidebar-item span {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .sidebar-item:hover {

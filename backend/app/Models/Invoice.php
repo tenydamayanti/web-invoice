@@ -149,6 +149,43 @@ class Invoice extends Model
         });
     }
 
+    public static function formatDocumentNumberForSender(
+        Carbon|string|null $issueDate,
+        ?int $senderCompanyId,
+        int $sequence,
+    ): string {
+        return static::formatDocumentNumber(
+            static::normalizeIssueDate($issueDate),
+            $sequence,
+            static::resolveInvoicePrefix($senderCompanyId),
+        );
+    }
+
+    public static function syncStoredSequenceForSenderPeriod(
+        Carbon|string|null $issueDate,
+        ?int $senderCompanyId = null,
+    ): void {
+        if (! $senderCompanyId || ! SenderCompany::hasColumn('last_invoice_sequence')) {
+            return;
+        }
+
+        $normalizedIssueDate = static::normalizeIssueDate($issueDate);
+
+        DB::transaction(function () use ($normalizedIssueDate, $senderCompanyId): void {
+            $senderCompany = SenderCompany::query()->whereKey($senderCompanyId)->lockForUpdate()->first();
+
+            if (! $senderCompany) {
+                return;
+            }
+
+            $senderCompany->forceFill([
+                'invoice_sequence_year' => $normalizedIssueDate->year,
+                'invoice_sequence_month' => $normalizedIssueDate->month,
+                'last_invoice_sequence' => static::highestLocalSequenceForPeriod($normalizedIssueDate, $senderCompanyId),
+            ])->save();
+        });
+    }
+
     public static function syncOverdueStatuses(?Carbon $referenceDate = null): void
     {
         $today = ($referenceDate ?? now(config('app.timezone')))->startOfDay()->toDateString();

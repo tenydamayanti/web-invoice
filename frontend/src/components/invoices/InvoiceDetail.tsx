@@ -64,9 +64,9 @@ export function InvoiceDetail({
           </span>
         </div>
 
-        <div className="mt-5 flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
-          <div className="min-w-0">
-            <h1 className="break-words text-3xl font-semibold text-foreground [overflow-wrap:anywhere]">
+        <div className="mt-5 flex flex-col gap-6 2xl:flex-row 2xl:items-start 2xl:justify-between">
+          <div className="min-w-0 flex-1">
+            <h1 className="break-words text-2xl font-semibold text-foreground [overflow-wrap:anywhere] sm:text-3xl">
               {documentNumber}
             </h1>
             {documentNumber !== invoice.invoice_number ? (
@@ -88,18 +88,18 @@ export function InvoiceDetail({
             </div>
           </div>
 
-          <div className="flex w-full flex-col gap-3 xl:w-auto xl:items-end">
-            <div className="flex flex-wrap gap-3 xl:justify-end">
-              <Button onClick={onPreview} variant="outline">
+          <div className="flex w-full min-w-0 flex-col gap-3 2xl:w-auto 2xl:items-end">
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:flex 2xl:w-auto 2xl:flex-wrap 2xl:justify-end">
+              <Button className="w-full 2xl:w-auto" onClick={onPreview} variant="outline">
                 <Eye className="mr-2 h-4 w-4" />
                 Preview PDF
               </Button>
-              <Button onClick={onDownload} variant="secondary">
+              <Button className="w-full 2xl:w-auto" onClick={onDownload} variant="secondary">
                 <Download className="mr-2 h-4 w-4" />
                 Download PDF
               </Button>
               {invoice.status === "draft" || invoice.status === "sent" || invoice.status === "overdue" ? (
-                <Button asChild variant="outline">
+                <Button asChild className="w-full 2xl:w-auto" variant="outline">
                   <Link href={`/invoices/${invoice.id}/edit`}>
                     <Pencil className="mr-2 h-4 w-4" />
                     {invoice.status === "draft" ? "Edit" : "Revisi"}
@@ -107,7 +107,7 @@ export function InvoiceDetail({
                 </Button>
               ) : null}
               {invoice.status === "draft" ? (
-                <Button onClick={onDelete} variant="danger">
+                <Button className="w-full 2xl:w-auto" onClick={onDelete} variant="danger">
                   <Trash2 className="mr-2 h-4 w-4" />
                   Hapus
                 </Button>
@@ -115,9 +115,9 @@ export function InvoiceDetail({
             </div>
 
             {manualTransitions.length > 0 ? (
-              <div className="w-full rounded-[24px] border border-border bg-[color:var(--input)] p-4 xl:w-[340px]">
+              <div className="w-full rounded-[24px] border border-border bg-[color:var(--input)] p-4 2xl:w-[340px]">
                 <p className="text-sm font-semibold text-foreground">Ubah Status</p>
-                <div className="mt-3 flex flex-col gap-3 sm:flex-row xl:flex-col">
+                <div className="mt-3 flex flex-col gap-3 sm:flex-row 2xl:flex-col">
                   <Select
                     onChange={(event) => setNextStatus(event.target.value as InvoiceStatus)}
                     value={nextStatus}
@@ -142,12 +142,12 @@ export function InvoiceDetail({
         </div>
       </Card>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_360px]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,360px)]">
         <div className="space-y-6">
           <Card className="fade-up">
             <CardTitle>Pengirim dan Penerima</CardTitle>
 
-            <div className="mt-6 grid gap-5 md:grid-cols-2">
+            <div className="mt-6 grid gap-5 min-[1180px]:grid-cols-2">
               <InfoPanel
                 address={senderAddress}
                 details={[
@@ -178,7 +178,7 @@ export function InvoiceDetail({
               />
             </div>
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 min-[1180px]:grid-cols-4">
               <MetricCard
                 label="No. Invoice"
                 value={documentNumber}
@@ -221,7 +221,7 @@ export function InvoiceDetail({
                   className="min-w-0 rounded-[24px] border border-border bg-[color:var(--input)] p-4"
                   key={item.id}
                 >
-                  <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_90px_150px_170px] sm:items-start">
+                  <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_70px_minmax(130px,0.45fr)_minmax(150px,0.5fr)] md:items-start xl:grid-cols-[minmax(0,1fr)_90px_150px_170px]">
                     <InvoiceField
                       label={`Item ${index + 1}`}
                       value={
@@ -348,8 +348,8 @@ function InfoPanel({
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[24px] border border-border bg-[color:var(--input)] p-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
+    <div className="min-w-0 rounded-[24px] border border-border bg-[color:var(--input)] p-4">
+      <p className="break-words text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--muted)] [overflow-wrap:anywhere]">
         {label}
       </p>
       <p className="mt-3 break-words text-sm font-semibold leading-6 text-foreground [overflow-wrap:anywhere]">
@@ -368,8 +368,8 @@ function DetailRow({
 }) {
   return (
     <div className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-      <span className="shrink-0 text-[color:var(--muted)]">{label}</span>
-      <span className="min-w-0 break-words text-left font-medium text-foreground [overflow-wrap:anywhere] sm:max-w-[62%] sm:text-right">
+      <span className="min-w-0 shrink-0 break-words text-[color:var(--muted)] [overflow-wrap:anywhere]">{label}</span>
+      <span className="min-w-0 break-words text-left font-medium text-foreground [overflow-wrap:anywhere] sm:max-w-[58%] sm:text-right xl:max-w-[62%]">
         {value}
       </span>
     </div>
@@ -385,7 +385,7 @@ function InvoiceField({
 }) {
   return (
     <div className="min-w-0">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--muted)]">
+      <p className="break-words text-xs font-semibold uppercase tracking-[0.12em] text-[color:var(--muted)] [overflow-wrap:anywhere]">
         {label}
       </p>
       <div className="mt-2 break-words text-sm text-foreground [overflow-wrap:anywhere]">{value}</div>

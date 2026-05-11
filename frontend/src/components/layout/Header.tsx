@@ -106,8 +106,8 @@ export function Header({
 
   return (
     <header className="topbar-surface px-3 py-3 sm:px-5 sm:py-4">
-      <div className="flex items-start justify-between gap-3 sm:items-center sm:gap-4">
-        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-3 sm:items-center sm:gap-4">
+        <div className="flex min-w-[12rem] flex-1 items-center gap-3 sm:gap-4">
           <button
             aria-label={isSidebarCollapsed ? "Buka sidebar" : "Minimalkan sidebar"}
             className="toolbar-button"
@@ -127,7 +127,7 @@ export function Header({
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="toolbar-button relative" type="button">
@@ -194,13 +194,13 @@ export function Header({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="group flex items-center gap-2 rounded-[18px] border border-border bg-[color:var(--card-strong)] px-2 py-2 text-left shadow-[0_14px_30px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 sm:gap-3 sm:px-3 sm:py-2.5 lg:px-4 lg:py-3">
-                <div className="hidden min-w-0 text-right sm:block">
+              <button className="group flex min-w-0 items-center gap-2 rounded-[18px] border border-border bg-[color:var(--card-strong)] px-2 py-2 text-left shadow-[0_14px_30px_rgba(15,23,42,0.12)] transition hover:-translate-y-0.5 sm:gap-3 sm:px-3 sm:py-2.5 xl:px-4 xl:py-3">
+                <div className="hidden min-w-0 max-w-[9rem] text-right sm:block xl:max-w-[12rem]">
                   <p className="truncate text-sm font-semibold text-foreground">{user.name}</p>
                   <p className="text-xs text-[color:var(--muted)]">Online</p>
                 </div>
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-sky-500 bg-[color:var(--card-strong)] text-primary sm:h-10 sm:w-10 lg:h-12 lg:w-12">
-                  <UserCircle2 className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6" />
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-sky-500 bg-[color:var(--card-strong)] text-primary sm:h-10 sm:w-10 xl:h-12 xl:w-12">
+                  <UserCircle2 className="h-4 w-4 sm:h-5 sm:w-5 xl:h-6 xl:w-6" />
                 </span>
                 <ChevronDown className="hidden h-4 w-4 text-[color:var(--muted)] transition group-hover:text-foreground sm:block" />
               </button>

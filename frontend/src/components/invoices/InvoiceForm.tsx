@@ -98,6 +98,13 @@ export function InvoiceForm({
       ? getInvoiceDisplayNumber(initialData)
       : generateDocumentNumber(initialIssueDate, selectedSenderCompany?.invoice_prefix || "DIGITAL-INV"),
   );
+  const [invoiceSequence, setInvoiceSequence] = useState(() => {
+    const initialNumber = initialData
+      ? getInvoiceDisplayNumber(initialData)
+      : generateDocumentNumber(initialIssueDate, selectedSenderCompany?.invoice_prefix || "DIGITAL-INV");
+
+    return String(extractInvoiceSequence(initialNumber) || 1);
+  });
   const previousIssueDate = useRef(initialIssueDate);
 
   const form = useForm<InvoiceFormInput, unknown, InvoiceFormOutput>({
@@ -146,7 +153,10 @@ export function InvoiceForm({
     previousIssueDate.current = initialData.issue_date;
     setSelectedVendor(initialData.vendor);
     setSelectedSenderCompany(initialData.sender_company ?? null);
-    setDocumentNumber(getInvoiceDisplayNumber(initialData));
+    const currentNumber = getInvoiceDisplayNumber(initialData);
+
+    setDocumentNumber(currentNumber);
+    setInvoiceSequence(String(extractInvoiceSequence(currentNumber) || 1));
   }, [form, initialData]);
 
   useEffect(() => {
@@ -300,9 +310,21 @@ export function InvoiceForm({
 
     async function syncDocumentNumber() {
       if (mode === "edit" && initialData) {
-        const currentNumber = getInvoiceDisplayNumber(initialData);
-        setDocumentNumber(currentNumber);
-        form.setValue("template_data.document_number", currentNumber, {
+        if (!issueDate) {
+          return;
+        }
+
+        const baseNumber = generateDocumentNumber(
+          issueDate,
+          selectedSenderCompany?.invoice_prefix || initialData.sender_company?.invoice_prefix || "DIGITAL-INV",
+        );
+        const revisedNumber = replaceInvoiceSequence(
+          baseNumber,
+          invoiceSequence || String(extractInvoiceSequence(getInvoiceDisplayNumber(initialData)) || 1),
+        );
+
+        setDocumentNumber(revisedNumber);
+        form.setValue("template_data.document_number", revisedNumber, {
           shouldDirty: false,
         });
         return;
@@ -325,6 +347,7 @@ export function InvoiceForm({
         if (mounted) {
           const nextNumber = response.data.data.invoice_number;
           setDocumentNumber(nextNumber);
+          setInvoiceSequence(String(extractInvoiceSequence(nextNumber) || 1));
           form.setValue("template_data.document_number", nextNumber, {
             shouldDirty: false,
           });
@@ -337,6 +360,7 @@ export function InvoiceForm({
 
         if (mounted) {
           setDocumentNumber(fallbackNumber);
+          setInvoiceSequence(String(extractInvoiceSequence(fallbackNumber) || 1));
           form.setValue("template_data.document_number", fallbackNumber, {
             shouldDirty: false,
           });
@@ -349,7 +373,7 @@ export function InvoiceForm({
     return () => {
       mounted = false;
     };
-  }, [form, initialData, issueDate, manualLastSequence, mode, selectedSenderCompany?.invoice_prefix, senderCompanyId]);
+  }, [form, initialData, invoiceSequence, issueDate, manualLastSequence, mode, selectedSenderCompany?.invoice_prefix, senderCompanyId]);
 
   const subtotal = watchedItems.reduce((sum, item) => {
     return sum + (Number(item.quantity) || 0) * (Number(item.unit_price) || 0);
@@ -534,8 +558,33 @@ export function InvoiceForm({
             <Input type="date" {...register("due_date")} />
           </Field>
 
-          <Field label="Nomor Invoice" error={errors.template_data?.document_number?.message}>
-            <Input readOnly value={documentNumber} />
+          <Field label={mode === "edit" ? "Nomor Urut Invoice" : "Nomor Invoice"} error={errors.template_data?.document_number?.message}>
+            {mode === "edit" ? (
+              <div className="grid gap-2 sm:grid-cols-[140px_minmax(0,1fr)]">
+                <Input
+                  min="1"
+                  onChange={(event) => {
+                    const nextSequence = event.target.value.replace(/\D/g, "");
+                    const nextNumber = replaceInvoiceSequence(documentNumber, nextSequence);
+
+                    setInvoiceSequence(nextSequence);
+                    setDocumentNumber(nextNumber);
+                    setValue("template_data.document_number", nextNumber, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }}
+                  step="1"
+                  type="number"
+                  value={invoiceSequence}
+                />
+                <div className="flex min-h-11 items-center break-words rounded-2xl border border-border bg-[color:var(--card-strong)] px-4 text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
+                  {documentNumber}
+                </div>
+              </div>
+            ) : (
+              <Input readOnly value={documentNumber} />
+            )}
           </Field>
 
           {mode === "create" ? (
@@ -830,4 +879,21 @@ function formatDateInput(offsetDays: number) {
   const date = new Date();
   date.setDate(date.getDate() + offsetDays);
   return date.toISOString().slice(0, 10);
+}
+
+function extractInvoiceSequence(invoiceNumber: string) {
+  const match = invoiceNumber.trim().match(/^(\d+)/);
+
+  return match ? Number(match[1]) : 0;
+}
+
+function replaceInvoiceSequence(invoiceNumber: string, sequence: string) {
+  const normalizedSequence = sequence === "" ? "" : String(Number(sequence)).padStart(2, "0");
+  const separatorIndex = invoiceNumber.indexOf("/");
+
+  if (separatorIndex === -1) {
+    return normalizedSequence;
+  }
+
+  return `${normalizedSequence}${invoiceNumber.slice(separatorIndex)}`;
 }
