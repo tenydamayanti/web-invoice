@@ -5,7 +5,7 @@
     <title>{{ $templateData['document_number'] ?: $invoice->invoice_number }}</title>
     <style>
         @page {
-            margin: 30mm 12mm 30mm;
+            margin: 45mm 12mm 30mm;
         }
 
         :root {
@@ -38,8 +38,8 @@
         }
 
         .page-header {
-            top: -21mm;
-            height: 22mm;
+            top: -36mm;
+            height: 28mm;
         }
 
         .page-footer {
