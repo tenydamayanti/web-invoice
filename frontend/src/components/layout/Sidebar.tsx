@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import {
   Building2,
   ChevronDown,
-  ClipboardList,
   LayoutDashboard,
   ReceiptText,
   Search,
@@ -32,10 +31,7 @@ const sections = [
     id: "transaction",
     title: "Transaksi",
     icon: ReceiptText,
-    items: [
-      { href: "/invoices", label: "Invoice", icon: ReceiptText },
-      { href: "/manual-invoice-number-logs", label: "Logs Nomor Invoice", icon: ClipboardList },
-    ],
+    items: [{ href: "/invoices", label: "Invoice", icon: ReceiptText }],
   },
 ] as const;
 
