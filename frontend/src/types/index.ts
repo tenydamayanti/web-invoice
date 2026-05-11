@@ -29,6 +29,9 @@ export interface SenderCompany {
   signature_role: string;
   signature_name: string;
   invoice_prefix: string;
+  invoice_sequence_year: number | null;
+  invoice_sequence_month: number | null;
+  last_invoice_sequence: number;
   tax_percent: number;
   deduction_label: string;
   deduction_percent: number;

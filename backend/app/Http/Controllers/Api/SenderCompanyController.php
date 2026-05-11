@@ -105,6 +105,10 @@ class SenderCompanyController extends Controller
             $rules['tax_percent'] = ['nullable', 'numeric', 'min:0'];
         }
 
+        if (SenderCompany::hasColumn('last_invoice_sequence')) {
+            $rules['last_invoice_sequence'] = ['nullable', 'integer', 'min:0'];
+        }
+
         $payload = $request->validate($rules);
 
         $payload['deduction_percent'] = (float) ($payload['deduction_percent'] ?? 0);
@@ -119,6 +123,18 @@ class SenderCompanyController extends Controller
             $payload['tax_percent'] = (float) ($payload['tax_percent'] ?? 0);
         } else {
             unset($payload['tax_percent']);
+        }
+
+        if (SenderCompany::hasColumn('last_invoice_sequence')) {
+            $payload['invoice_sequence_year'] = now()->year;
+            $payload['invoice_sequence_month'] = now()->month;
+            $payload['last_invoice_sequence'] = (int) ($payload['last_invoice_sequence'] ?? 0);
+        } else {
+            unset(
+                $payload['invoice_sequence_year'],
+                $payload['invoice_sequence_month'],
+                $payload['last_invoice_sequence'],
+            );
         }
 
         return $payload;

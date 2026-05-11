@@ -24,6 +24,9 @@ class SenderCompany extends Model
         'signature_role',
         'signature_name',
         'invoice_prefix',
+        'invoice_sequence_year',
+        'invoice_sequence_month',
+        'last_invoice_sequence',
         'tax_percent',
         'deduction_label',
         'deduction_percent',
@@ -36,6 +39,9 @@ class SenderCompany extends Model
     {
         return [
             'tax_percent' => 'float',
+            'invoice_sequence_year' => 'integer',
+            'invoice_sequence_month' => 'integer',
+            'last_invoice_sequence' => 'integer',
             'deduction_percent' => 'float',
             'is_default' => 'boolean',
         ];

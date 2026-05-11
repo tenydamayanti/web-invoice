@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class Invoice extends Model
 {
@@ -68,7 +70,7 @@ class Invoice extends Model
                 return;
             }
 
-            $invoice->invoice_number = static::previewNextInvoiceNumberForSender(
+            $invoice->invoice_number = static::allocateNextInvoiceNumberForSender(
                 $invoice->issue_date,
                 $invoice->sender_company_id,
             );
@@ -89,12 +91,62 @@ class Invoice extends Model
         Carbon|string|null $issueDate,
         ?int $senderCompanyId = null,
         ?int $excludeInvoiceId = null,
+        ?int $manualLastSequence = null,
     ): string {
         $normalizedIssueDate = static::normalizeIssueDate($issueDate);
-        $sequence = static::monthlySequenceQuery($normalizedIssueDate, $senderCompanyId, $excludeInvoiceId)->count() + 1;
+        $sequence = max(
+            static::highestLocalSequenceForPeriod($normalizedIssueDate, $senderCompanyId, $excludeInvoiceId),
+            static::storedSequenceForSender($normalizedIssueDate, $senderCompanyId),
+            max(0, (int) ($manualLastSequence ?? 0)),
+        ) + 1;
         $invoicePrefix = static::resolveInvoicePrefix($senderCompanyId);
 
         return static::formatDocumentNumber($normalizedIssueDate, $sequence, $invoicePrefix);
+    }
+
+    public static function allocateNextInvoiceNumberForSender(
+        Carbon|string|null $issueDate,
+        ?int $senderCompanyId = null,
+        ?int $manualLastSequence = null,
+    ): string {
+        $normalizedIssueDate = static::normalizeIssueDate($issueDate);
+
+        return DB::transaction(function () use ($normalizedIssueDate, $senderCompanyId, $manualLastSequence): string {
+            $senderCompany = $senderCompanyId
+                ? SenderCompany::query()->whereKey($senderCompanyId)->lockForUpdate()->first()
+                : null;
+
+            $storedSequence = 0;
+
+            if (
+                $senderCompany
+                && SenderCompany::hasColumn('last_invoice_sequence')
+                && (int) $senderCompany->invoice_sequence_year === $normalizedIssueDate->year
+                && (int) $senderCompany->invoice_sequence_month === $normalizedIssueDate->month
+            ) {
+                $storedSequence = (int) $senderCompany->last_invoice_sequence;
+            }
+
+            $sequence = max(
+                static::highestLocalSequenceForPeriod($normalizedIssueDate, $senderCompanyId),
+                $storedSequence,
+                max(0, (int) ($manualLastSequence ?? 0)),
+            ) + 1;
+
+            if ($senderCompany && SenderCompany::hasColumn('last_invoice_sequence')) {
+                $senderCompany->forceFill([
+                    'invoice_sequence_year' => $normalizedIssueDate->year,
+                    'invoice_sequence_month' => $normalizedIssueDate->month,
+                    'last_invoice_sequence' => $sequence,
+                ])->save();
+            }
+
+            return static::formatDocumentNumber(
+                $normalizedIssueDate,
+                $sequence,
+                static::resolveInvoicePrefix($senderCompanyId),
+            );
+        });
     }
 
     public static function syncOverdueStatuses(?Carbon $referenceDate = null): void
@@ -158,6 +210,36 @@ class Invoice extends Model
             ->whereMonth('issue_date', $issueDate->month)
             ->when($senderCompanyId, fn (Builder $query) => $query->where('sender_company_id', $senderCompanyId))
             ->when($excludeInvoiceId, fn (Builder $query) => $query->where('id', '!=', $excludeInvoiceId));
+    }
+
+    private static function highestLocalSequenceForPeriod(
+        Carbon $issueDate,
+        ?int $senderCompanyId = null,
+        ?int $excludeInvoiceId = null,
+    ): int {
+        return static::monthlySequenceQuery($issueDate, $senderCompanyId, $excludeInvoiceId)
+            ->pluck('invoice_number')
+            ->map(fn (string $invoiceNumber): int => (int) Str::before($invoiceNumber, '/'))
+            ->max() ?? 0;
+    }
+
+    private static function storedSequenceForSender(Carbon $issueDate, ?int $senderCompanyId = null): int
+    {
+        if (! $senderCompanyId || ! SenderCompany::hasColumn('last_invoice_sequence')) {
+            return 0;
+        }
+
+        $senderCompany = SenderCompany::query()->find($senderCompanyId);
+
+        if (
+            ! $senderCompany
+            || (int) $senderCompany->invoice_sequence_year !== $issueDate->year
+            || (int) $senderCompany->invoice_sequence_month !== $issueDate->month
+        ) {
+            return 0;
+        }
+
+        return (int) $senderCompany->last_invoice_sequence;
     }
 
     private static function resolveInvoicePrefix(?int $senderCompanyId = null): string

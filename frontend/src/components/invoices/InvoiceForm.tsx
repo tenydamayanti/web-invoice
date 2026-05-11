@@ -57,6 +57,7 @@ const invoiceSchema = z
     issue_date: z.string().min(1, "Tanggal invoice wajib diisi"),
     due_date: z.string().min(1, "Tanggal jatuh tempo wajib diisi"),
     notes: z.string().optional(),
+    manual_last_sequence: z.coerce.number().int().min(0, "Nomor terakhir tidak boleh negatif").optional(),
     template_data: templateSchema,
     items: z.array(itemSchema).min(1, "Minimal satu item invoice"),
   })
@@ -107,6 +108,7 @@ export function InvoiceForm({
       issue_date: initialIssueDate,
       due_date: initialData?.due_date ?? formatDateInput(7),
       notes: initialData?.template_data?.contract_number ?? initialData?.notes ?? "",
+      manual_last_sequence: 0,
       template_data: initialTemplate,
       items:
         initialData?.items?.map((item) => ({
@@ -133,6 +135,7 @@ export function InvoiceForm({
       issue_date: initialData.issue_date,
       due_date: initialData.due_date,
       notes: initialData.template_data?.contract_number ?? initialData.notes ?? "",
+      manual_last_sequence: 0,
       template_data: hydrateInvoiceTemplate(initialData),
       items: initialData.items.map((item) => ({
         description: item.description,
@@ -267,6 +270,7 @@ export function InvoiceForm({
   const signatureDate = form.watch("template_data.signature_date");
   const senderCompanyId = form.watch("sender_company_id");
   const contractNumber = form.watch("notes");
+  const manualLastSequence = form.watch("manual_last_sequence");
   const taxPercent = form.watch("template_data.tax_percent");
   const deductionLabel = form.watch("template_data.deduction_label");
   const deductionPercent = form.watch("template_data.deduction_percent");
@@ -314,6 +318,7 @@ export function InvoiceForm({
             issue_date: issueDate,
             sender_company_id: senderCompanyId || undefined,
             exclude_invoice_id: mode === "edit" ? initialData?.id : undefined,
+            manual_last_sequence: mode === "create" ? manualLastSequence || undefined : undefined,
           },
         });
 
@@ -344,7 +349,7 @@ export function InvoiceForm({
     return () => {
       mounted = false;
     };
-  }, [form, initialData, issueDate, mode, selectedSenderCompany?.invoice_prefix, senderCompanyId]);
+  }, [form, initialData, issueDate, manualLastSequence, mode, selectedSenderCompany?.invoice_prefix, senderCompanyId]);
 
   const subtotal = watchedItems.reduce((sum, item) => {
     return sum + (Number(item.quantity) || 0) * (Number(item.unit_price) || 0);
@@ -532,6 +537,12 @@ export function InvoiceForm({
           <Field label="Nomor Invoice" error={errors.template_data?.document_number?.message}>
             <Input readOnly value={documentNumber} />
           </Field>
+
+          {mode === "create" ? (
+            <Field label="Nomor Terakhir dari Perangkat Lain" error={errors.manual_last_sequence?.message}>
+              <Input min="0" step="1" type="number" {...register("manual_last_sequence")} />
+            </Field>
+          ) : null}
 
           <Field label="No. Kontrak" error={errors.notes?.message}>
             <Input placeholder="Masukkan nomor kontrak" {...register("notes")} />

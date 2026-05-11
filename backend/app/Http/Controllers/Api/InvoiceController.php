@@ -37,6 +37,7 @@ class InvoiceController extends Controller
             'issue_date' => ['nullable', 'date'],
             'exclude_invoice_id' => ['nullable', 'integer'],
             'sender_company_id' => ['nullable', 'integer'],
+            'manual_last_sequence' => ['nullable', 'integer', 'min:0'],
         ]);
 
         return response()->json([
@@ -45,6 +46,7 @@ class InvoiceController extends Controller
                     $payload['issue_date'] ?? now()->toDateString(),
                     $payload['sender_company_id'] ?? null,
                     $payload['exclude_invoice_id'] ?? null,
+                    $payload['manual_last_sequence'] ?? null,
                 ),
             ],
         ]);
@@ -58,9 +60,10 @@ class InvoiceController extends Controller
             $calculated = $this->calculateTotals($payload['items'], $payload['template_data'] ?? []);
 
             $invoice = Invoice::query()->create([
-                'invoice_number' => Invoice::previewNextInvoiceNumberForSender(
+                'invoice_number' => Invoice::allocateNextInvoiceNumberForSender(
                     $payload['issue_date'],
                     $payload['sender_company_id'],
+                    $payload['manual_last_sequence'] ?? null,
                 ),
                 'vendor_id' => $payload['vendor_id'],
                 'sender_company_id' => $payload['sender_company_id'],
@@ -262,6 +265,7 @@ class InvoiceController extends Controller
             'due_date' => ['required', 'date', 'after_or_equal:issue_date'],
             'status' => ['required', Rule::in([Invoice::STATUS_DRAFT, Invoice::STATUS_SENT])],
             'notes' => ['nullable', 'string'],
+            'manual_last_sequence' => ['nullable', 'integer', 'min:0'],
             'template_data' => ['nullable', 'array'],
             'template_data.issuer_company_name' => ['nullable', 'string'],
             'template_data.issuer_address' => ['nullable', 'string'],

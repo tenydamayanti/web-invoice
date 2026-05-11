@@ -51,6 +51,12 @@ export function SenderCompanyTable({
                     <dd className="break-words text-left [overflow-wrap:anywhere]">{senderCompany.invoice_prefix}</dd>
                   </div>
                   <div className="flex flex-col gap-1.5">
+                    <dt className="text-[color:var(--muted)]">Nomor Terakhir</dt>
+                    <dd className="break-words text-left [overflow-wrap:anywhere]">
+                      {formatLastInvoiceSequence(senderCompany)}
+                    </dd>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
                     <dt className="text-[color:var(--muted)]">PPN</dt>
                     <dd className="break-words text-left [overflow-wrap:anywhere]">
                       {senderCompany.tax_percent}%
@@ -87,6 +93,7 @@ export function SenderCompanyTable({
                 <TableHeaderCell>Rekening</TableHeaderCell>
                 <TableHeaderCell>Penandatangan</TableHeaderCell>
                 <TableHeaderCell>Prefix Invoice</TableHeaderCell>
+                <TableHeaderCell>Nomor Terakhir</TableHeaderCell>
                 <TableHeaderCell>PPN</TableHeaderCell>
                 <TableHeaderCell>Potongan</TableHeaderCell>
                 <TableHeaderCell className="text-right">Aksi</TableHeaderCell>
@@ -102,6 +109,7 @@ export function SenderCompanyTable({
                       <TableCell>{senderCompany.bank_account_number}</TableCell>
                       <TableCell>{senderCompany.signature_name}</TableCell>
                       <TableCell>{senderCompany.invoice_prefix}</TableCell>
+                      <TableCell>{formatLastInvoiceSequence(senderCompany)}</TableCell>
                       <TableCell>{senderCompany.tax_percent}%</TableCell>
                       <TableCell>
                         {senderCompany.deduction_label} ({senderCompany.deduction_percent}%)
@@ -134,4 +142,12 @@ export function SenderCompanyTable({
       </div>
     </>
   );
+}
+
+function formatLastInvoiceSequence(senderCompany: SenderCompany): string {
+  if (!senderCompany.invoice_sequence_year || !senderCompany.invoice_sequence_month) {
+    return "0";
+  }
+
+  return `${senderCompany.last_invoice_sequence} (${String(senderCompany.invoice_sequence_month).padStart(2, "0")}/${senderCompany.invoice_sequence_year})`;
 }

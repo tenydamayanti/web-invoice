@@ -22,6 +22,7 @@ const senderCompanySchema = z.object({
   signature_role: z.string().min(1, "Jabatan wajib diisi"),
   signature_name: z.string().min(1, "Nama penandatangan wajib diisi"),
   invoice_prefix: z.string().min(1, "Prefix invoice wajib diisi"),
+  last_invoice_sequence: z.coerce.number().int().min(0, "Nomor terakhir tidak boleh negatif"),
   tax_percent: z.coerce.number().min(0, "PPN tidak boleh negatif"),
   deduction_label: z.string().min(1, "Label potongan wajib diisi"),
   deduction_percent: z.coerce.number().min(0, "Potongan tidak boleh negatif"),
@@ -58,6 +59,7 @@ export function SenderCompanyFormModal({
       signature_role: "",
       signature_name: "",
       invoice_prefix: "",
+      last_invoice_sequence: 0,
       tax_percent: 0,
       deduction_label: "",
       deduction_percent: 0,
@@ -81,6 +83,7 @@ export function SenderCompanyFormModal({
         signature_role: initialData.signature_role,
         signature_name: initialData.signature_name,
         invoice_prefix: initialData.invoice_prefix || "DIGITAL-INV",
+        last_invoice_sequence: isCurrentInvoiceSequencePeriod(initialData) ? initialData.last_invoice_sequence : 0,
         tax_percent: initialData.tax_percent ?? 0,
         deduction_label: initialData.deduction_label,
         deduction_percent: initialData.deduction_percent,
@@ -98,6 +101,7 @@ export function SenderCompanyFormModal({
       signature_role: "",
       signature_name: "",
       invoice_prefix: "",
+      last_invoice_sequence: 0,
       tax_percent: 0,
       deduction_label: "",
       deduction_percent: 0,
@@ -112,6 +116,7 @@ export function SenderCompanyFormModal({
       const normalizedValues = {
         ...values,
         invoice_prefix: values.invoice_prefix.trim() || "DIGITAL-INV",
+        last_invoice_sequence: Number.isFinite(values.last_invoice_sequence) ? values.last_invoice_sequence : 0,
         tax_percent: Number.isFinite(values.tax_percent) ? values.tax_percent : 0,
         deduction_percent: Number.isFinite(values.deduction_percent) ? values.deduction_percent : 0,
       };
@@ -198,6 +203,10 @@ export function SenderCompanyFormModal({
 
             <Field label="Prefix Invoice" error={errors.invoice_prefix?.message}>
               <Input placeholder="DIGITAL-INV" {...register("invoice_prefix")} />
+            </Field>
+
+            <Field label="Nomor Terakhir Invoice Bulan Ini" error={errors.last_invoice_sequence?.message}>
+              <Input min="0" step="1" type="number" {...register("last_invoice_sequence")} />
             </Field>
 
             <Field label="PPN (%)" error={errors.tax_percent?.message}>
@@ -298,5 +307,14 @@ function Field({
       {children}
       {error ? <p className="text-sm text-amber-700">{error}</p> : null}
     </label>
+  );
+}
+
+function isCurrentInvoiceSequencePeriod(senderCompany: SenderCompany): boolean {
+  const today = new Date();
+
+  return (
+    senderCompany.invoice_sequence_year === today.getFullYear() &&
+    senderCompany.invoice_sequence_month === today.getMonth() + 1
   );
 }
