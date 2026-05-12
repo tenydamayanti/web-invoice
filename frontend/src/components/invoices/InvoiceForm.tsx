@@ -406,8 +406,31 @@ export function InvoiceForm({
         toast.success(status === "draft" ? "Draft berhasil disimpan." : "Invoice berhasil dibuat.");
         router.push(`/invoices/${response.data.data.id}`);
       }
-    } catch {
-      toast.error("Gagal menyimpan invoice.");
+    } catch (error) {
+      const validationErrors = (error as {
+        response?: {
+          data?: {
+            errors?: Record<string, string[]>;
+            message?: string;
+          };
+        };
+      }).response?.data?.errors;
+      const invoiceNumberError = validationErrors?.["template_data.document_number"]?.[0];
+
+      if (invoiceNumberError) {
+        setError("template_data.document_number", {
+          type: "server",
+          message: invoiceNumberError,
+        });
+        toast.error(invoiceNumberError);
+
+        return;
+      }
+
+      toast.error(
+        (error as { response?: { data?: { message?: string } } }).response?.data?.message
+          || "Gagal menyimpan invoice.",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -417,6 +440,7 @@ export function InvoiceForm({
     register,
     handleSubmit,
     setValue,
+    setError,
     formState: { errors },
   } = form;
 

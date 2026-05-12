@@ -59,13 +59,16 @@ class InvoiceController extends Controller
 
         $invoice = DB::transaction(function () use ($payload, $request) {
             $calculated = $this->calculateTotals($payload['items'], $payload['template_data'] ?? []);
+            $invoiceNumber = Invoice::allocateNextInvoiceNumberForSender(
+                $payload['issue_date'],
+                $payload['sender_company_id'],
+                $payload['manual_last_sequence'] ?? null,
+            );
+
+            $this->ensureInvoiceNumberIsUnique($invoiceNumber);
 
             $invoice = Invoice::query()->create([
-                'invoice_number' => Invoice::allocateNextInvoiceNumberForSender(
-                    $payload['issue_date'],
-                    $payload['sender_company_id'],
-                    $payload['manual_last_sequence'] ?? null,
-                ),
+                'invoice_number' => $invoiceNumber,
                 'vendor_id' => $payload['vendor_id'],
                 'sender_company_id' => $payload['sender_company_id'],
                 'user_id' => $request->user()->id,
