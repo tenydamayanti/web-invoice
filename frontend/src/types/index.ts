@@ -68,6 +68,15 @@ export interface InvoiceTemplateData {
   tax_percent: number;
   deduction_label: string;
   deduction_percent: number;
+  was_ever_paid?: boolean;
+  last_revised_from_paid_at?: string;
+  paid_revision_history?: Array<{
+    recorded_at: string;
+    status_before_revision: InvoiceStatus;
+    invoice_number: string;
+    total: number;
+    due_date: string;
+  }>;
 }
 
 export type InvoiceStatus =

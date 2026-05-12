@@ -111,21 +111,32 @@ class InvoiceController extends Controller
     {
         $invoice = Invoice::query()->with('items')->findOrFail($id);
 
-        if (! in_array($invoice->status, [Invoice::STATUS_DRAFT, Invoice::STATUS_SENT, Invoice::STATUS_OVERDUE], true)) {
+        $allowedStatuses = [
+            Invoice::STATUS_DRAFT,
+            Invoice::STATUS_SENT,
+            Invoice::STATUS_OVERDUE,
+            Invoice::STATUS_PAID, // Mengizinkan revisi untuk status lunas
+        ];
+
+        if (! in_array($invoice->status, $allowedStatuses, true)) {
             return response()->json([
-                'message' => 'Hanya invoice dengan status draft, terbit, atau jatuh tempo yang dapat diubah.',
+                'message' => 'Invoice dengan status ini tidak dapat diubah.',
             ], 422);
         }
 
         $payload = $this->validateInvoice($request);
 
-        $updatedInvoice = DB::transaction(function () use ($invoice, $payload) {
+        $updatedInvoice = DB::transaction(function () use ($invoice, $payload, $request) {
             $calculated = $this->calculateTotals($payload['items'], $payload['template_data'] ?? []);
             $oldIssueDate = $invoice->issue_date;
             $oldSenderCompanyId = $invoice->sender_company_id;
             $invoiceNumber = $this->resolveRevisedInvoiceNumber($payload, $invoice);
+            $wasPaid = $invoice->status === Invoice::STATUS_PAID;
 
             $this->ensureInvoiceNumberIsUnique($invoiceNumber, $invoice->id);
+
+            $newNotes = filled($payload['notes'] ?? null) ? trim((string) $payload['notes']) : null;
+            $resolvedStatus = $wasPaid ? Invoice::STATUS_SENT : $payload['status'];
 
             $invoice->update([
                 'invoice_number' => $invoiceNumber,
@@ -133,21 +144,22 @@ class InvoiceController extends Controller
                 'sender_company_id' => $payload['sender_company_id'],
                 'issue_date' => $payload['issue_date'],
                 'due_date' => $payload['due_date'],
-                'status' => $payload['status'],
+                'status' => $resolvedStatus,
                 'subtotal' => $calculated['subtotal'],
                 'tax_percent' => $calculated['tax_percent'],
                 'tax_amount' => $calculated['tax_amount'],
                 'deduction_amount' => $calculated['deduction_amount'],
                 'total' => $calculated['total'],
-                'notes' => filled($payload['notes'] ?? null) ? trim((string) $payload['notes']) : null,
+                'notes' => $newNotes,
             ]);
 
             $invoice->items()->delete();
             $invoice->items()->createMany($calculated['items']);
 
             $invoice->load(['vendor', 'senderCompany']);
+            $mergedTemplateData = $this->mergeTemplateDataForUpdate($invoice, $payload, $wasPaid);
             $invoice->update([
-                'template_data' => $this->resolveTemplateData($payload['template_data'] ?? [], $invoice),
+                'template_data' => $this->resolveTemplateData($mergedTemplateData, $invoice),
             ]);
 
             Invoice::syncStoredSequenceForSenderPeriod($oldIssueDate, $oldSenderCompanyId);
@@ -255,6 +267,40 @@ class InvoiceController extends Controller
             $filename,
             ['Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']
         )->deleteFileAfterSend(true);
+    }
+
+    private function buildInvoiceQuery(Request $request): Builder
+    {
+        $search = trim((string) $request->query('search', ''));
+        $status = trim((string) $request->query('status', ''));
+        $fromDate = $request->query('from_date');
+        $toDate = $request->query('to_date');
+        $vendorId = $request->integer('vendor_id');
+        $senderCompanyId = $request->integer('sender_company_id');
+
+        return Invoice::query()
+            ->with(['vendor', 'senderCompany', 'items', 'user'])
+            ->when($status !== '', fn (Builder $query) => $query->where('status', $status))
+            ->when($vendorId > 0, fn (Builder $query) => $query->where('vendor_id', $vendorId))
+            ->when($senderCompanyId > 0, fn (Builder $query) => $query->where('sender_company_id', $senderCompanyId))
+            ->when($fromDate, fn (Builder $query, mixed $date) => $query->whereDate('issue_date', '>=', $date))
+            ->when($toDate, fn (Builder $query, mixed $date) => $query->whereDate('issue_date', '<=', $date))
+            ->when($search !== '', function (Builder $query) use ($search): void {
+                $query->where(function (Builder $searchQuery) use ($search): void {
+                    $searchQuery
+                        ->where('invoice_number', 'like', "%{$search}%")
+                        ->orWhere('notes', 'like', "%{$search}%")
+                        ->orWhere('template_data->document_number', 'like', "%{$search}%")
+                        ->orWhereHas('vendor', function (Builder $vendorQuery) use ($search): void {
+                            $vendorQuery
+                                ->where('company_name', 'like', "%{$search}%")
+                                ->orWhere('name', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('senderCompany', fn (Builder $senderQuery) => $senderQuery->where('company_name', 'like', "%{$search}%"));
+                });
+            })
+            ->latest('issue_date')
+            ->latest('id');
     }
 
     private function validateInvoice(Request $request): array
@@ -372,6 +418,45 @@ class InvoiceController extends Controller
         return $templateData;
     }
 
+    private function mergeTemplateDataForUpdate(Invoice $invoice, array $payload, bool $wasPaid): array
+    {
+        $incoming = $payload['template_data'] ?? [];
+        $existing = is_array($invoice->template_data) ? $invoice->template_data : [];
+
+        if (! $wasPaid) {
+            return array_merge($existing, $incoming);
+        }
+
+        return array_merge(
+            $existing,
+            $incoming,
+            [
+                'paid_revision_history' => $this->appendPaidRevisionHistory($existing, $invoice),
+                'was_ever_paid' => true,
+                'last_revised_from_paid_at' => now(config('app.timezone'))->toIso8601String(),
+            ],
+        );
+    }
+
+    private function appendPaidRevisionHistory(array $templateData, Invoice $invoice): array
+    {
+        $history = $templateData['paid_revision_history'] ?? [];
+
+        if (! is_array($history)) {
+            $history = [];
+        }
+
+        $history[] = [
+            'recorded_at' => now(config('app.timezone'))->toIso8601String(),
+            'status_before_revision' => Invoice::STATUS_PAID,
+            'invoice_number' => $invoice->invoice_number,
+            'total' => round((float) $invoice->total, 2),
+            'due_date' => $this->normalizeDate($invoice->due_date),
+        ];
+
+        return array_values($history);
+    }
+
     private function makeDocumentNumber(Invoice $invoice): string
     {
         return $invoice->invoice_number;
@@ -474,6 +559,26 @@ class InvoiceController extends Controller
         return preg_replace('/[\\\\\\/:*?"<>|]/', '-', $documentNumber).'.pdf';
     }
 
+    private function makeLetterheadDataUri(?string $path): ?string
+    {
+        $normalizedPath = trim((string) $path);
+
+        if ($normalizedPath === '' || ! Storage::disk('public')->exists($normalizedPath)) {
+            return null;
+        }
+
+        $absolutePath = Storage::disk('public')->path($normalizedPath);
+        $contents = @file_get_contents($absolutePath);
+
+        if ($contents === false) {
+            return null;
+        }
+
+        $mimeType = mime_content_type($absolutePath) ?: 'application/octet-stream';
+
+        return 'data:'.$mimeType.';base64,'.base64_encode($contents);
+    }
+
     private function createInvoiceExportSpreadsheet(Request $request, Collection $invoices): string
     {
         $tempFile = tempnam(sys_get_temp_dir(), 'invoice-export-');
@@ -519,6 +624,7 @@ class InvoiceController extends Controller
         ]];
 
         foreach ($invoices as $invoice) {
+            /** @var Invoice $invoice */
             $templateData = $this->resolveTemplateData($invoice->template_data ?? [], $invoice);
             $documentNumber = $templateData['document_number'] ?: $invoice->invoice_number;
             $deductionAmount = $invoice->deduction_amount;
@@ -752,53 +858,12 @@ XML;
 
     private function escapeSpreadsheetValue(string $value): string
     {
-        return htmlspecialchars($value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+        return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
     }
 
     private function escapeSpreadsheetFormulaValue(string $value): string
     {
         return str_replace('"', '""', $value);
-    }
-
-    private function makeLetterheadDataUri(?string $path): ?string
-    {
-        if (blank($path) || ! Storage::disk('public')->exists($path)) {
-            return null;
-        }
-
-        $content = Storage::disk('public')->get($path);
-        $mimeType = Storage::disk('public')->mimeType($path) ?: 'image/png';
-
-        return 'data:'.$mimeType.';base64,'.base64_encode($content);
-    }
-
-    private function buildInvoiceQuery(Request $request): Builder
-    {
-        return Invoice::query()
-            ->with(['vendor', 'senderCompany'])
-            ->when($request->filled('status'), fn (Builder $query) => $query->where('status', $request->string('status')))
-            ->when($request->filled('vendor_id'), fn (Builder $query) => $query->where('vendor_id', $request->integer('vendor_id')))
-            ->when($request->filled('from_date'), fn (Builder $query) => $query->whereDate('issue_date', '>=', $request->string('from_date')))
-            ->when($request->filled('to_date'), fn (Builder $query) => $query->whereDate('issue_date', '<=', $request->string('to_date')))
-            ->when($request->filled('search'), function (Builder $query) use ($request) {
-                $search = trim((string) $request->string('search'));
-
-                $query->where(function (Builder $invoiceQuery) use ($search) {
-                    $invoiceQuery
-                        ->where('invoice_number', 'like', "%{$search}%")
-                        ->orWhereRaw(
-                            "JSON_UNQUOTE(JSON_EXTRACT(template_data, '$.document_number')) like ?",
-                            ["%{$search}%"]
-                        )
-                        ->orWhereHas('vendor', function (Builder $vendorQuery) use ($search) {
-                            $vendorQuery
-                                ->where('name', 'like', "%{$search}%")
-                                ->orWhere('company_name', 'like', "%{$search}%");
-                        });
-                });
-            })
-            ->orderByDesc('issue_date')
-            ->orderByDesc('id');
     }
 
     private function mapPaymentStatusLabel(string $status): string
@@ -809,8 +874,7 @@ XML;
             Invoice::STATUS_PAID => 'Lunas',
             Invoice::STATUS_OVERDUE => 'Jatuh Tempo',
             Invoice::STATUS_CANCELLED => 'Dibatalkan',
-            default => ucfirst($status),
+            default => $status,
         };
     }
-
 }

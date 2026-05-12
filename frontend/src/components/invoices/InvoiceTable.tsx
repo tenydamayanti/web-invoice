@@ -75,7 +75,7 @@ export function InvoiceTable({
                     <Download className="mr-2 h-4 w-4" />
                     PDF
                   </Button>
-                  {invoice.status !== "paid" && invoice.status !== "cancelled" ? (
+                  {invoice.status !== "cancelled" ? (
                     <Button asChild className="h-9 rounded-xl px-3" variant="outline">
                       <Link href={`/invoices/${invoice.id}/edit`}>
                         <Pencil className="mr-2 h-4 w-4" />
@@ -137,7 +137,7 @@ export function InvoiceTable({
                             <Download className="mr-2 h-4 w-4" />
                             PDF
                           </Button>
-                          {invoice.status !== "paid" && invoice.status !== "cancelled" ? (
+                          {invoice.status !== "cancelled" ? (
                             <Button asChild className="h-9 rounded-xl px-3" variant="outline">
                               <Link href={`/invoices/${invoice.id}/edit`}>
                                 <Pencil className="mr-2 h-4 w-4" />

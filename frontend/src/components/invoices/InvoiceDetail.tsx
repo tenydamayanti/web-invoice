@@ -48,6 +48,7 @@ export function InvoiceDetail({
     invoice.sender_company?.company_name || invoice.template_data?.issuer_company_name || "-";
   const senderAddress = invoice.template_data?.issuer_address || invoice.sender_company?.address || "-";
   const signatureDate = formatDate(invoice.template_data?.signature_date || invoice.issue_date);
+  const paidRevisionHistory = invoice.template_data?.paid_revision_history || [];
 
   return (
     <div className="space-y-6">
@@ -98,7 +99,7 @@ export function InvoiceDetail({
                 <Download className="mr-2 h-4 w-4" />
                 Download PDF
               </Button>
-              {invoice.status === "draft" || invoice.status === "sent" || invoice.status === "overdue" ? (
+              {invoice.status === "draft" || invoice.status === "sent" || invoice.status === "overdue" || invoice.status === "paid" ? (
                 <Button asChild className="w-full 2xl:w-auto" variant="outline">
                   <Link href={`/invoices/${invoice.id}/edit`}>
                     <Pencil className="mr-2 h-4 w-4" />
@@ -203,6 +204,28 @@ export function InvoiceDetail({
                 <p className="mt-2 text-sm leading-6 text-[color:var(--muted)]">
                   {invoice.template_data?.contract_number || invoice.notes}
                 </p>
+              </div>
+            ) : null}
+
+            {paidRevisionHistory.length > 0 ? (
+              <div className="mt-6 rounded-[24px] border border-emerald-200 bg-emerald-50/70 p-5">
+                <p className="text-sm font-semibold text-emerald-800">Histori Pembayaran</p>
+                <p className="mt-2 text-sm leading-6 text-emerald-700">
+                  Invoice ini pernah berstatus lunas, lalu direvisi dan dikembalikan ke status terbit.
+                </p>
+                <div className="mt-4 space-y-3">
+                  {paidRevisionHistory.map((entry, index) => (
+                    <div
+                      className="rounded-[18px] border border-emerald-200 bg-white/80 p-4"
+                      key={`${entry.recorded_at}-${index}`}
+                    >
+                      <DetailRow label="Dicatat pada" value={formatDate(entry.recorded_at)} />
+                      <DetailRow label="Nomor saat lunas" value={entry.invoice_number} />
+                      <DetailRow label="Total saat lunas" value={formatCurrency(entry.total)} />
+                      <DetailRow label="Jatuh tempo saat lunas" value={formatDate(entry.due_date)} />
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : null}
           </Card>

@@ -12,6 +12,29 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
+/**
+ * @property int $id
+ * @property string $invoice_number
+ * @property int $vendor_id
+ * @property int|null $sender_company_id
+ * @property int $user_id
+ * @property Carbon|string|null $issue_date
+ * @property Carbon|string|null $due_date
+ * @property string $status
+ * @property float $subtotal
+ * @property float $tax_percent
+ * @property float $tax_amount
+ * @property float $deduction_amount
+ * @property float $total
+ * @property string|null $notes
+ * @property array|null $template_data
+ * @property-read Vendor|null $vendor
+ * @property-read SenderCompany|null $senderCompany
+ * @property-read User|null $user
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, InvoiceItem> $items
+ * @method static Builder<static> query()
+ * @method static Builder<static> withTrashed()
+ */
 class Invoice extends Model
 {
     use HasFactory, SoftDeletes;
@@ -192,6 +215,11 @@ class Invoice extends Model
 
         static::query()
             ->where('status', self::STATUS_SENT)
+            ->where(function (Builder $query): void {
+                $query
+                    ->whereNull('template_data->paid_revision_history')
+                    ->orWhereJsonLength('template_data->paid_revision_history', 0);
+            })
             ->whereDate('due_date', '<', $today)
             ->update(['status' => self::STATUS_OVERDUE]);
 
