@@ -40,6 +40,9 @@ export function hydrateInvoiceTemplate(invoice: Invoice): InvoiceTemplateData {
   return {
     ...createInvoiceTemplateDefaults(invoice.issue_date),
     ...invoice.template_data,
+    recipient_address: invoice.template_data?.recipient_address ?? "",
+    recipient_npwp: invoice.template_data?.recipient_npwp ?? "",
+    contract_number: invoice.template_data?.contract_number ?? "",
   };
 }
 

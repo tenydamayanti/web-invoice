@@ -36,7 +36,7 @@ const templateSchema = z.object({
   issuer_address: z.string().min(1, "Alamat perusahaan wajib diisi"),
   recipient_company_name: z.string().min(1, "Nama penerima wajib diisi"),
   recipient_address: z.string(),
-  recipient_npwp: z.string(),
+  recipient_npwp: z.preprocess((value) => value ?? "", z.string()),
   document_number: z.string(),
   contract_number: z.string(),
   payment_bank_name: z.string().min(1, "Nama bank wajib diisi"),
