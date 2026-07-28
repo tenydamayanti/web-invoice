@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Building2, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/axios";
+import { getApiErrorMessage, getApiValidationErrors } from "@/lib/api-error";
 import {
   createInvoiceTemplateDefaults,
   generateDocumentNumber,
@@ -175,8 +176,8 @@ export function InvoiceForm({
         });
 
         setVendorResults(response.data.data);
-      } catch {
-        toast.error("Gagal memuat daftar vendor.");
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, "Gagal memuat daftar vendor."));
       } finally {
         setVendorLoading(false);
       }
@@ -201,8 +202,8 @@ export function InvoiceForm({
         });
 
         setSenderResults(response.data.data);
-      } catch {
-        toast.error("Gagal memuat perusahaan pengirim.");
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, "Gagal memuat perusahaan pengirim."));
       } finally {
         setSenderLoading(false);
       }
@@ -407,30 +408,20 @@ export function InvoiceForm({
         router.push(`/invoices/${response.data.data.id}`);
       }
     } catch (error) {
-      const validationErrors = (error as {
-        response?: {
-          data?: {
-            errors?: Record<string, string[]>;
-            message?: string;
-          };
-        };
-      }).response?.data?.errors;
-      const invoiceNumberError = validationErrors?.["template_data.document_number"]?.[0];
+      const validationErrors = getApiValidationErrors(error);
+      Object.entries(validationErrors).forEach(([field, messages]) => {
+        const message = Array.isArray(messages) ? messages[0] : messages;
+        if (typeof message !== "string") {
+          return;
+        }
 
-      if (invoiceNumberError) {
-        setError("template_data.document_number", {
+        setError(field as Parameters<typeof setError>[0], {
           type: "server",
-          message: invoiceNumberError,
+          message,
         });
-        toast.error(invoiceNumberError);
+      });
 
-        return;
-      }
-
-      toast.error(
-        (error as { response?: { data?: { message?: string } } }).response?.data?.message
-          || "Gagal menyimpan invoice.",
-      );
+      toast.error(getApiErrorMessage(error, "Gagal menyimpan invoice."));
     } finally {
       setSubmitting(false);
     }

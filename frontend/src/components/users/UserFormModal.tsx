@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import api from "@/lib/axios";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -121,8 +122,8 @@ export function UserFormModal({
 
       onSaved();
       onOpenChange(false);
-    } catch {
-      toast.error("Gagal menyimpan data user.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Gagal menyimpan data user."));
     } finally {
       setSubmitting(false);
     }

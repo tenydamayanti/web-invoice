@@ -5,6 +5,12 @@ function resolveApiBaseUrl() {
   if (typeof window !== "undefined") {
     const { protocol, hostname } = window.location;
 
+    const configuredUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    if (configuredUrl && !configuredUrl.includes("backend:")) {
+      return configuredUrl;
+    }
+
     return `${protocol}//${hostname}:8000/api`;
   }
 

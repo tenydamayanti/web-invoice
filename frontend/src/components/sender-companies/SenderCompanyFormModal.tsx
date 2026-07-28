@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import api from "@/lib/axios";
+import { getApiErrorMessage } from "@/lib/api-error";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -151,8 +152,8 @@ export function SenderCompanyFormModal({
 
       onSaved();
       onOpenChange(false);
-    } catch {
-      toast.error("Gagal menyimpan perusahaan pengirim.");
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Gagal menyimpan perusahaan pengirim."));
     } finally {
       setSubmitting(false);
     }
