@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm, type SubmitErrorHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Building2, Trash2, Users } from "lucide-react";
@@ -69,6 +69,23 @@ const invoiceSchema = z
 
 type InvoiceFormInput = z.input<typeof invoiceSchema>;
 type InvoiceFormOutput = z.output<typeof invoiceSchema>;
+
+function collectFormErrorMessages(value: unknown, path = ""): string[] {
+  if (!value || typeof value !== "object") {
+    return [];
+  }
+
+  const error = value as { message?: unknown };
+  if (typeof error.message === "string" && error.message.trim()) {
+    return [path ? `${path}: ${error.message}` : error.message];
+  }
+
+  return Object.entries(value).flatMap(([key, child]) =>
+    key === "ref" || key === "type" || key === "types"
+      ? []
+      : collectFormErrorMessages(child, path ? `${path}.${key}` : key),
+  );
+}
 
 export function InvoiceForm({
   initialData,
@@ -435,6 +452,16 @@ export function InvoiceForm({
     formState: { errors },
   } = form;
 
+  const handleInvalidSubmit: SubmitErrorHandler<InvoiceFormInput> = (invalidErrors) => {
+    const messages = collectFormErrorMessages(invalidErrors).slice(0, 5);
+
+    toast.error(
+      messages.length
+        ? `Form belum dapat disimpan:\n${messages.join("\n")}`
+        : "Form belum dapat disimpan. Periksa kembali data invoice.",
+    );
+  };
+
   function applyVendor(vendor: Vendor) {
     const currentTemplate = form.getValues("template_data") as InvoiceTemplateData;
 
@@ -751,14 +778,14 @@ export function InvoiceForm({
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
         <Button
           disabled={submitting}
-          onClick={handleSubmit((values) => submitWithStatus(values, "draft"))}
+          onClick={handleSubmit((values) => submitWithStatus(values, "draft"), handleInvalidSubmit)}
           variant="outline"
         >
           {submitting ? "Menyimpan..." : mode === "edit" ? "Simpan sebagai Draft" : "Simpan Draft"}
         </Button>
         <Button
           disabled={submitting}
-          onClick={handleSubmit((values) => submitWithStatus(values, "sent"))}
+          onClick={handleSubmit((values) => submitWithStatus(values, "sent"), handleInvalidSubmit)}
         >
           {submitting ? "Menyimpan..." : mode === "edit" ? "Simpan Perubahan" : "Buat Invoice"}
         </Button>
