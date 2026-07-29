@@ -229,6 +229,7 @@
 
         .quantity-heading {
             border: 0 !important;
+            border-left: 1px solid #111111 !important;
             text-align: center;
             width: var(--amount-gap-width);
         }
@@ -256,7 +257,7 @@
         }
 
         .quantity-cell {
-            border-left: 0 !important;
+            border-left: 1px solid #111111 !important;
             border-right: 0 !important;
             border-top: 1px solid #111111 !important;
             border-bottom: 1px solid #111111 !important;
