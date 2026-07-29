@@ -227,8 +227,9 @@
             text-align: center;
         }
 
-        .amount-gap-heading {
+        .quantity-heading {
             border: 0 !important;
+            text-align: center;
             width: var(--amount-gap-width);
         }
 
@@ -254,12 +255,14 @@
             border-right: 0 !important;
         }
 
-        .amount-gap-cell {
+        .quantity-cell {
             border-left: 0 !important;
             border-right: 0 !important;
             border-top: 1px solid #111111 !important;
             border-bottom: 1px solid #111111 !important;
-            padding: 0 !important;
+            font-variant-numeric: tabular-nums;
+            padding: 8px 10px !important;
+            text-align: center;
             width: var(--amount-gap-width);
         }
 
@@ -612,7 +615,7 @@
                     <thead>
                         <tr>
                             <th>Item Description</th>
-                            <th class="amount-gap-heading"></th>
+                            <th class="quantity-heading">Qty</th>
                             <th class="amount-heading">Amount</th>
                         </tr>
                     </thead>
@@ -620,7 +623,7 @@
                         @foreach($invoice->items as $item)
                             <tr>
                                 <td class="item-description item-description-cell">{{ $item->description }}</td>
-                                <td class="amount-gap-cell"></td>
+                                <td class="quantity-cell">{{ rtrim(rtrim(number_format((float) $item->quantity, 2, ',', '.'), '0'), ',') }}</td>
                                 <td class="amount-cell">
                                     <table class="amount-table">
                                         <tr>

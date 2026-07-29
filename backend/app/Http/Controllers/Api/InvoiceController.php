@@ -113,6 +113,7 @@ class InvoiceController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $invoice = Invoice::query()->with('items')->findOrFail($id);
+        $currentStatus = strtolower(trim((string) $invoice->status));
 
         $allowedStatuses = [
             Invoice::STATUS_DRAFT,
@@ -121,7 +122,7 @@ class InvoiceController extends Controller
             Invoice::STATUS_PAID, // Mengizinkan revisi untuk status lunas
         ];
 
-        if (! in_array($invoice->status, $allowedStatuses, true)) {
+        if (! in_array($currentStatus, $allowedStatuses, true)) {
             return response()->json([
                 'message' => 'Invoice dengan status ini tidak dapat diubah.',
             ], 422);
